@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Paiement réussi</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body style="background: #002b55; min-height: 100vh; padding: 40px;">
+
+<div class="container">
+    <div class="card shadow rounded-4 p-4" style="max-width: 550px; margin: auto; background-color: #f0f8ff;">
+        <h2 class="text-success text-center mb-4"><i class="bi bi-check-circle-fill"></i> Paiement enregistré avec succès !</h2>
+
+        <p><strong>Matricule :</strong> {{ matricule }}</p>
+        <p><strong>Nom complet :</strong> {{ nom_complet }}</p>
+        <p><strong>Genre :</strong> {{ genre }}</p>
+        <p><strong>Mois payé :</strong> {{ mois }}</p>
+        <p><strong>Montant payé :</strong> {{ montant_paye }} $</p>
+        <p><strong>Montant restant :</strong> {{ montant_restant }} $</p>
+        <p><strong>Caissière :</strong> {{ caissiere }}</p>
+
+        <div class="d-grid gap-3 mt-4">
+            <a href="{{ url_for('paiement') }}" class="btn btn-secondary" style="background-color: #1e3a5f; color: #fff; font-weight: bold">
+                <i class="fas fa-rotate-right"></i> Refaire un paiement
+            </a>
+
+            <a href="{{ url_for('gestion_minerval') }}" class="btn btn-outline-secondary" style="background-color: #af0404; color: #fff; font-weight: bold">
+                <i class="bi bi-arrow-left"></i> Retour au menu 
+            </a>
+        </div>
+    </div>
+</div>
+<script>
+    const pdfUrl = `/recu_paiement/{{ paiement_id }}`;
+    const iframe = document.createElement('iframe');
+    iframe.style.display = 'none';
+    iframe.src = pdfUrl;
+
+    iframe.onload = function () {
+        setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+        }, 500);
+    };
+
+    document.body.appendChild(iframe);
+</script>
+
+</body>
+</html>

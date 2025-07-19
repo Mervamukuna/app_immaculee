@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Changer mot de passe</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<style>
+    .btn-secondary{
+        background-color: rgb(141, 106, 9); 
+            color: #fff;
+            border: 1px solid #fff;
+            padding: 6px 18px;
+            border-radius: 5px;
+            font-size: 1rem;
+            text-decoration: none;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            display: inline-block;
+            font-weight: bold;
+    }
+
+    .btn-success {
+            background-color: #065f0b;
+            color: white;
+            border: none;
+            padding: 6px 18px;
+            border-radius: 5px;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+</style>
+<body class="bg-light">
+<div class="container mt-5">
+    <div class="card shadow-lg">
+        <div class="card-header bg-primary text-white" style="background-color: #002b55 !important;">
+            <h4 style="font-weight:bold; font-size: 45px; font-family: serif;">Changer votre mot de passe</h4>
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+              {% if messages %}
+                {% for category, message in messages %}
+                  <div class="alert alert-{{ category }}">{{ message }}</div>
+                {% endfor %}
+              {% endif %}
+            {% endwith %}
+
+            <form method="POST">
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight:bold;">Ancien mot de passe</label>
+                    <input type="password" name="ancien" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight:bold;">Nouveau mot de passe</label>
+                    <input type="password" name="nouveau" class="form-control" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label" style="font-weight:bold;">Confirmer le mot de passe</label>
+                    <input type="password" name="confirmer" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-success">Changer</button>
+                <a href="{{ url_for('menu') }}" class="btn btn-secondary">Annuler</a>
+            </form>
+        </div>
+    </div>
+</div>
+</body>
+</html>

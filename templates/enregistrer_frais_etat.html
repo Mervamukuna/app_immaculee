@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>💵 Paiement des frais de l'État</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        label {
+            font-weight: bold;
+            color: #002b55;
+        }
+        body {
+            background-color: #002b55;
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container bg-white p-5 rounded shadow">
+
+    <h3 class="text-center mb-4 fw-bold" style="color: #002b55; font-weight: bold; font-size: 40px; font-family: serif;">
+        <i class="bi bi-cash-stack"></i> Paiement des frais de l'État
+    </h3>
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="alert alert-danger alert-dismissible fade show mt-2" role="alert">
+          {% for message in messages %}
+            {{ message }}
+          {% endfor %}
+          <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+      {% endif %}
+    {% endwith %}
+
+
+    <form method="post" action="{{ url_for('enregistrer_frais_etat') }}">
+        <div class="row g-3">
+
+            <div class="col-md-4">
+                <label for="matricule" class="form-label"><i class="bi bi-person-badge"></i> Matricule</label>
+                <input type="text" name="matricule" id="matricule" class="form-control" required>
+            </div>
+
+            <div class="col-md-4">
+                <label for="nom" class="form-label"><i class="bi bi-person"></i> Nom</label>
+                <input type="text" name="nom" id="nom" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="postnom" class="form-label"><i class="bi bi-person"></i> Postnom</label>
+                <input type="text" name="postnom" id="postnom" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="prenom" class="form-label"><i class="bi bi-person"></i> Prénom</label>
+                <input type="text" name="prenom" id="prenom" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="genre" class="form-label"><i class="bi bi-gender-ambiguous"></i> Genre</label>
+                <input type="text" name="genre" id="genre" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="section" class="form-label"><i class="bi bi-diagram-3"></i> Section</label>
+                <input type="text" name="section" id="section" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="classe" class="form-label"><i class="bi bi-journal-text"></i> Classe</label>
+                <input type="text" name="classe" id="classe" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-4">
+                <label for="tranche" class="form-label"><i class="bi bi-wallet2"></i> Tranche</label>
+                <select name="tranche" id="tranche" class="form-select" required>
+                    <option value="">-- Choisir une tranche --</option>
+                    <option value="Tranche 1">Tranche 1</option>
+                    <option value="Tranche 2">Tranche 2</option>
+                </select>
+            </div>
+
+            <div class="col-md-4">
+                <label for="montant" class="form-label"><i class="bi bi-cash-stack"></i> Montant (FC)</label>
+                <input type="number" name="montant" id="montant" class="form-control" required>
+            </div>
+
+            <div class="col-md-6">
+                <label for="date_paiement" class="form-label"><i class="bi bi-calendar-check"></i> Date du paiement</label>
+                <input type="text" name="date_paiement" value="{{ current_date }}" class="form-control" readonly>
+            </div>
+
+            <div class="col-md-6">
+                <label for="caissier" class="form-label"><i class="bi bi-person-badge-fill"></i> Caissier</label>
+                <input type="text" name="caissier" id="caissier" class="form-control" value="{{ session['nom_utilisateur'] }}" readonly>
+            </div>
+
+        </div>
+
+        <div class="mt-4 text-center">
+            <button type="submit" class="btn btn-success px-5 fw-bold" style="background-color: #065f0b; color: white; font-weight: bold;">
+                <i class="bi bi-save"></i> Enregistrer
+            </button>
+            <!-- Bouton Retour -->
+            
+                <a href="javascript:history.back()" class="btn btn-outline-secondary fw-bold" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; ">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const profilConnecte = "{{ session.get('autorisation', '') }}"; // profil de l'utilisateur
+
+    async function chargerInfosEleveEtat() {
+        const matricule = document.getElementById('matricule').value.trim();
+        if (matricule === '') return;
+
+        const response = await fetch(`/infos_eleve/${matricule}`);
+        if (response.ok) {
+            const data = await response.json();
+
+            // Remplissage automatique
+            document.getElementById('nom').value = data.nom;
+            document.getElementById('postnom').value = data.postnom;
+            document.getElementById('prenom').value = data.prenom;
+            document.getElementById('genre').value = data.genre;
+            document.getElementById('section').value = data.section;
+            document.getElementById('classe').value = data.classe;
+
+            // Remplir automatiquement la date de paiement
+            const aujourdHui = new Date();
+            const yyyy = aujourdHui.getFullYear();
+            const mm = String(aujourdHui.getMonth() + 1).padStart(2, '0');
+            const dd = String(aujourdHui.getDate()).padStart(2, '0');
+            document.getElementById('date_paiement').value = `${yyyy}-${mm}-${dd}`;
+
+            // Calcul de l’année scolaire automatique
+            let anneeScolaire = '';
+            if (aujourdHui.getMonth() + 1 >= 9) {
+                anneeScolaire = `${yyyy}-${yyyy + 1}`;
+            } else {
+                anneeScolaire = `${yyyy - 1}-${yyyy}`;
+            }
+            document.getElementById('annee_scolaire').value = anneeScolaire;
+
+            // Injecter automatiquement le nom de la caissière
+            document.getElementById('caissier').value = "{{ session.get('nom_utilisateur', 'Inconnu') }}";
+
+            // Cacher le message d'erreur s'il y en avait
+            const messageErreur = document.getElementById('erreur_section');
+            if (messageErreur) messageErreur.classList.add('d-none');
+
+            // Vérification de la section autorisée
+            const sectionsAutorisees = profilConnecte.split(',').map(s => s.trim().toLowerCase());
+            const sectionEleve = data.section.trim().toLowerCase();
+            if (!sectionsAutorisees.includes(sectionEleve)) {
+                if (messageErreur) {
+                    messageErreur.textContent = "⚠️ Paiement refusé : vous n’avez pas accès à la section « " + data.section + " ».";
+                    messageErreur.classList.remove('d-none');
+                }
+            }
+
+        } else {
+            alert("❌ Matricule introuvable.");
+        }
+    }
+
+    // Exécuter quand le champ matricule change
+    document.addEventListener('DOMContentLoaded', function() {
+        document.getElementById('matricule').addEventListener('change', chargerInfosEleveEtat);
+    });
+</script>
+
+</body>
+</html>

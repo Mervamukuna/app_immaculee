@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Modifier les informations de l'Élève</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+  <style>
+    body {
+      background: #002b55;
+      color: white;
+      padding-top: 30px;
+      min-height: 100vh;
+    }
+
+    .card {
+      border: none;
+      background-color: white;
+      color: black;
+    }
+
+    #titre_modification {
+      background-color: rgb(141, 106, 9);
+      color: white;
+      padding: 15px;
+      border-top-left-radius: 1rem;
+      border-top-right-radius: 1rem;
+      text-align: center;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      font-family: serif;
+    }
+
+    label {
+      font-weight: bold;
+      color: rgb(141, 106, 9);
+    }
+
+    .btn-enregistrer {
+      background-color: #065f0b;
+      color: white;
+      border: none;
+      padding: 6px 18px;
+      border-radius: 5px;
+      font-size: 1rem;
+      font-weight: bold;
+    }
+
+    .btn-retour {
+      background-color: rgb(141, 106, 9);
+      color: white;
+      font-weight: bold;
+      border-radius: 5px;
+      padding: 6px 18px;
+      border: none;
+      text-decoration: none;
+    }
+
+  
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="card shadow-lg rounded-4">
+    <div id="titre_modification" style="font-weight:bold !important;">
+      <h3><i class="bi bi-pencil-square"></i> Modifier l'inscription</h3>
+    </div>
+    <div class="card-body">
+      <form method="POST" action="{{ url_for('modifier_eleve', id=eleve[0]) }}">
+        <!-- NOM + PRENOM -->
+        <div class="row mb-3">
+          <div class="col-md-4"><label><i class="bi bi-person-circle"></i> Nom :</label><input name="nom" class="form-control" value="{{ eleve[2] }}" required></div>
+          <div class="col-md-4"><label><i class="bi bi-person-badge"></i> Post-nom :</label><input name="postnom" class="form-control" value="{{ eleve[3] }}" required></div>
+          <div class="col-md-4"><label><i class="bi bi-person"></i> Prénom :</label><input name="prenom" class="form-control" value="{{ eleve[4] }}" required></div>
+        </div>
+
+        <!-- GENRE + SECTION + CLASSE -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label><i class="bi bi-gender-ambiguous"></i> Genre :</label>
+            <select name="genre" class="form-select" required>
+              <option value="Masculin" {% if eleve[5] == "Masculin" %}selected{% endif %}>Masculin</option>
+              <option value="Féminin" {% if eleve[5] == "Féminin" %}selected{% endif %}>Féminin</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label><i class="bi bi-list-columns"></i> Section :</label>
+            <select name="section" id="section" class="form-select" required>
+              <option value="Maternelle" {% if eleve[6] == "Maternelle" %}selected{% endif %}>Maternelle</option>
+              <option value="Primaire" {% if eleve[6] == "Primaire" %}selected{% endif %}>Primaire</option>
+              <option value="Secondaire" {% if eleve[6] == "Secondaire" %}selected{% endif %}>Secondaire</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label><i class="bi bi-building"></i> Classe :</label>
+            <select name="classe" id="classe" class="form-select" required>
+              <option value="{{ eleve[7] }}" selected>{{ eleve[7] }}</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- ANNEE + NAISSANCE -->
+        <div class="row mb-3">
+          <div class="col-md-4"><label><i class="bi bi-calendar-range"></i> Année scolaire :</label><input name="annee_scolaire" class="form-control" value="{{ eleve[8] }}"></div>
+          <div class="col-md-4"><label><i class="bi bi-geo"></i> Lieu de naissance :</label><input name="lieu_naissance" class="form-control" value="{{ eleve[10] }}"></div>
+          <div class="col-md-4"><label><i class="bi bi-calendar"></i> Date de naissance :</label><input type="date" name="date_naissance" class="form-control" value="{{ eleve[11] }}"></div>
+        </div>
+
+        <!-- PROVENANCE -->
+        <div class="row mb-3">
+          <div class="col-md-4"><label><i class="bi bi-house"></i> École de provenance :</label><input name="ecole_provenance" class="form-control" value="{{ eleve[12] }}"></div>
+          <div class="col-md-4"><label><i class="bi bi-building"></i> Classe de provenance :</label><input name="classe_precedente" class="form-control" value="{{ eleve[13] }}"></div>
+          <div class="col-md-4"><label><i class="bi bi-calendar-range"></i> Adresse :</label><input name="adresse" class="form-control" value="{{ eleve[24] }}"></div>
+        </div>
+
+        <!-- RESPONSABLE -->
+        <div class="row mb-3">
+          <div class="col-md-4"><label><i class="bi bi-person-lines-fill"></i> Nom du responsable :</label><input name="responsable" class="form-control" value="{{ eleve[14] }}" required></div>
+          <div class="col-md-4"><label><i class="bi bi-telephone"></i> Téléphone :</label><input name="telephone_responsable" class="form-control" value="{{ eleve[15] }}" required></div>
+          <div class="col-md-4"><label><i class="bi bi-person-workspace"></i> Fonction :</label><input name="fonction_responsable" class="form-control" value="{{ eleve[16] }}"></div>
+        </div>
+
+        <!-- STATUT + FRAIS + BULLETIN -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label><i class="bi bi-star"></i> Statut de l'élève :</label>
+            <select name="statut_eleve" id="statut_eleve" class="form-select" required>
+              <option value="Nouveau" {% if eleve[17] == "Nouveau" %}selected{% endif %}>Nouveau</option>
+              <option value="Ancien" {% if eleve[17] == "Ancien" %}selected{% endif %}>Ancien</option>
+            </select>
+          </div>
+          <div class="col-md-4"><label><i class="bi bi-cash"></i> Frais d'enregistrement :</label><input name="frais_inscription" id="frais_inscription" class="form-control" value="{{ eleve[18] }}"></div>
+          <div class="col-md-4"><label><i class="bi bi-receipt"></i> Frais bulletin :</label><input name="frais_bulletin" class="form-control" value="{{ eleve[20] }}"></div>
+        </div>
+
+        <!-- RAM, SAVONS, PH -->
+        <div class="row mb-3">
+          <div class="col-md-4">
+            <label><i class="bi bi-check2-circle"></i> RAM papier :</label>
+            <select name="ram_papier" class="form-select">
+              <option value="Oui" {% if eleve[19] == "Oui" %}selected{% endif %}>Oui</option>
+              <option value="Non" {% if eleve[19] == "Non" %}selected{% endif %}>Non</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label><i class="bi bi-check2-circle"></i> Deux savons :</label>
+            <select name="deux_savons" class="form-select">
+              <option value="Oui" {% if eleve[22] == "Oui" %}selected{% endif %}>Oui</option>
+              <option value="Non" {% if eleve[22] == "Non" %}selected{% endif %}>Non</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label><i class="bi bi-check2-circle"></i> Deux PH :</label>
+            <select name="deux_ph" class="form-select">
+              <option value="Oui" {% if eleve[23] == "Oui" %}selected{% endif %}>Oui</option>
+              <option value="Non" {% if eleve[23] == "Non" %}selected{% endif %}>Non</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- FOURNITURES -->
+        <div class="row mb-3">
+          <div class="col-md-4" id="fournitures_block" style="display: none;">
+            <label><i class="bi bi-box-seam"></i> Fournitures :</label>
+            <input name="fournitures" class="form-control" value="{{ eleve[23] }}">
+          </div>
+        </div>
+
+        <!-- BOUTONS -->
+        <div class="text-center mt-4">
+          <button type="submit" class="btn-enregistrer"><i class="bi bi-save"></i> Enregistrer</button>
+          <a href="{{ url_for('liste_eleves') }}" class="btn-retour ms-2"><i class="bi bi-arrow-left"></i> Retour</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- JS -->
+<script>
+// JS intact, tu ne veux rien changer ici
+document.getElementById("section").addEventListener("change", function () {
+    const section = this.value;
+    const fournituresBlock = document.getElementById("fournitures_block");
+    const classeSelect = document.getElementById("classe");
+
+    fournituresBlock.style.display = (section === "Maternelle") ? "block" : "none";
+
+    fetch(`/get_classes/${section}`)
+      .then(response => response.json())
+      .then(classes => {
+        classeSelect.innerHTML = '<option value="">-- Sélectionner la classe --</option>';
+        classes.forEach(cl => {
+          const option = document.createElement('option');
+          option.value = cl;
+          option.textContent = cl;
+          classeSelect.appendChild(option);
+        });
+      })
+      .catch(error => {
+        console.error("Erreur lors de la récupération des classes :", error);
+      });
+});
+
+function mettreAJourFrais() {
+    const classe = document.getElementById("classe").value;
+    const statut = document.getElementById("statut_eleve").value;
+    const champFrais = document.getElementById("frais_inscription");
+
+    if (classe && statut) {
+        fetch(`/get_frais/${classe}/${statut}`)
+            .then(response => response.json())
+            .then(data => {
+                champFrais.value = data.frais || "";
+                champFrais.setAttribute("readonly", true);
+            })
+            .catch(error => {
+                champFrais.value = "";
+                champFrais.removeAttribute("readonly");
+            });
+    } else {
+        champFrais.value = "";
+        champFrais.removeAttribute("readonly");
+    }
+}
+
+document.getElementById("classe").addEventListener("change", mettreAJourFrais);
+document.getElementById("statut_eleve").addEventListener("change", mettreAJourFrais);
+</script>
+</body>
+</html>

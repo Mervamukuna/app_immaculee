@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Historique des paiements</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet" />
+    <style>
+        body {
+            background-color: #fff !important;
+            padding-top: 20px;
+            color: white;
+        }
+
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background-color: black;
+            color: white;
+            z-index: 10;
+        }
+
+      
+        form.sticky-form {
+            position: sticky;
+            top: 0;
+            background-color: white;
+            z-index: 100;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-filtrer {
+            background-color: #1e3a5f;
+            color: white;
+            font-weight: bold;
+        }
+
+        .btn-filtrer:hover {
+            background-color: #1565c0;
+        }
+
+        .btn-retour-haut {
+            background-color: rgb(141, 106, 9);
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            padding: 6px 18px;
+            border: none;
+            text-decoration: none;
+        }
+
+        .btn-retour-haut:hover {
+            background-color: rgb(141, 106, 9);
+        }
+
+        .table-responsive {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        .card-style {
+            background-color: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            color: black;
+        }
+
+        .titre-section {
+            background-color: #002b55;
+            color: white;
+            border-radius: 10px;
+            padding: 12px;
+            font-size: 40px;
+            font-weight: bold;
+            font-family: serif;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container-fluid px-4">
+
+    <div class="card-style mb-4">
+
+        <!-- 🔍 Filtres -->
+        <form method="POST" class="row g-3 mb-4 sticky-form">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h2 class="titre-section">
+                    <i class="fa-solid fa-file-invoice-dollar me-2"></i>Historique des paiements
+                </h2>
+                <a href="{{ url_for('gestion_minerval') }}" class="btn-retour-haut">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Retour au menu
+                </a>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="filtre_matricule" class="form-control" placeholder="🔍 Matricule..." value="{{ filtre_matricule }}">
+            </div>
+            <div class="col-md-3">
+                <select name="filtre_classe" class="form-select">
+                    <option value="">-- Classe --</option>
+                    {% for classe in classes %}
+                        <option value="{{ classe }}" {% if filtre_classe == classe %}selected{% endif %}>{{ classe }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="filtre_ordre" class="form-select">
+                    <option value="">-- En ordre --</option>
+                    <option value="Oui" {% if filtre_ordre == "Oui" %}selected{% endif %}>Oui</option>
+                    <option value="Non" {% if filtre_ordre == "Non" %}selected{% endif %}>Non</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <select name="filtre_mois" class="form-select">
+                    <option value="">-- Mois --</option>
+                    {% for mois in mois_disponibles %}
+                        <option value="{{ mois }}" {% if filtre_mois == mois %}selected{% endif %}>{{ mois }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-3">
+                <input type="date" name="filtre_jour" class="form-control" value="{{ filtre_jour }}">
+            </div>
+            <div class="col-md-3">
+                <select name="filtre_caissier" class="form-select">
+                    <option value="">-- Caissier(ère) --</option>
+                    {% for c in caissiers %}
+                        <option value="{{ c }}" {% if filtre_caissier == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-filtrer w-100 rounded-pill">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher
+                </button>
+            </div>
+            <div class="col-md-2">
+                <a href="{{ url_for('historique_paiements') }}" class="btn btn-secondary w-100 rounded-pill">
+                    <i class="fa-solid fa-rotate-right me-1"></i>Réinitialiser
+                </a>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="{{ url_for('imprimer_pdf') }}?url={{ 
+                    url_for('telecharger_historique_paiement', 
+                        filtre_matricule=filtre_matricule, 
+                        filtre_classe=filtre_classe, 
+                        filtre_mois=filtre_mois, 
+                        filtre_jour=filtre_jour, 
+                        filtre_caissier=filtre_caissier
+                    ) | urlencode 
+                }}" 
+                class="btn btn-success w-100 rounded-pill" target="_blank">
+                    <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
+                </a>
+
+            </div>
+        </form>
+
+        <!-- 📊 Tableau -->
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped align-middle text-center">
+                <thead class="table-dark">
+                    <tr>
+                        <th>#</th>
+                        <th>Matricule</th>
+                        <th>Nom complet</th>
+                        <th>Classe</th>
+                        <th>Section</th>
+                        <th>Mois</th>
+                        <th>Date</th>
+                        <th>Payé</th>
+                        <th>À payer</th>
+                        <th>Ordre</th>
+                        <th>Caissière</th>
+                        <th>Reçu</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for paiement in paiements %}
+                    <tr>
+                        <td>{{ loop.index }}</td>
+                        <td>{{ paiement.matricule }}</td>
+                        <td>{{ paiement.nom_complet }}</td>
+                        <td>{{ paiement.classe }}</td>
+                        <td>{{ paiement.section }}</td>
+                        <td>{{ paiement.mois }}</td>
+                        <td>{{ paiement.date }}</td>
+                        <td><span class="text-success fw-bold">{{ paiement.montant_paye }} $</span></td>
+                        <td><span class="text-danger">{{ paiement.montant_a_payer }} $</span></td>
+                        <td>
+                            {% if paiement.ordre == 'Oui' %}
+                                <span class="badge bg-success"><i class="fa-solid fa-check-circle me-1"></i>Oui</span>
+                            {% else %}
+                                <span class="badge bg-danger"><i class="fa-solid fa-xmark me-1"></i>Non</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ paiement.caissiere }}</td>
+                        <td>
+                            <a href="/recu_paiement/{{ paiement.id }}" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill">
+                                <i class="fa-solid fa-file-pdf me-1"></i>Reçu
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="12" class="text-center text-muted">Aucun paiement trouvé.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

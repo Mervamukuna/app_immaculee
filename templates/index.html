@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accueil - Gestion des Élèves</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #002b55;
+            background-size: cover;
+            color: white;
+            margin: 0;
+            padding: 20px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-family: 'Segoe UI', sans-serif;
+            min-height: 100vh;
+            overflow: hidden;
+            position: relative;
+            }
+
+        .container {
+            width: 1000px;
+            max-width: 800px;
+            max-height: 95vh;
+            padding: 40px 40px;
+            border-radius: 30px;
+            box-shadow: 0 0px 50px rgba(255,255,255,0.6);
+            text-align: center;
+            margin-top: 0px;
+            overflow: hidden;
+        }
+
+        .logo_gauche,
+        .logo_droit {
+            position: absolute;
+            top: 20px;
+            width: 200px;
+            height: auto;
+            border-radius: 12px;
+            z-index: 10;
+        }
+
+        /* Position gauche */
+        .logo_gauche {
+            left: 20px;
+        }
+
+        /* Position droite */
+        .logo_droit {
+            right: 20px;
+        }
+
+
+        .devise {
+            font-size: 1.5rem;
+            font-style: italic;
+            margin-bottom: 30px;
+        }
+
+        .lead {
+            font-size: 1.4rem;
+            margin-bottom: 40px;
+        }
+
+        .btn-connexion {
+            font-size: 1.2rem;
+            padding: 15px 40px;
+            border-radius: 50px;
+            border: 2px solid #fff;
+            background: transparent;
+            color: #fff;
+            text-decoration: none;
+            transition: 0.3s;
+        }
+
+        .btn-connexion:hover {
+            background-color: #01ac34;
+            color: white;
+        }
+
+        .marquee {
+            margin-top: 30px;
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: bold;
+            animation: defilement 15s linear infinite;
+            white-space: nowrap;
+        }
+
+        @keyframes defilement {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Logo -->
+    <img src="{{ url_for('static', filename='logo1.jpg') }}" alt="Logo gauche" class="logo_gauche">
+    <img src="{{ url_for('static', filename='logo.jpg') }}" alt="Logo droit" class="logo_droit">
+
+    <div class="container">
+        <h1 style="font-size: 3.5rem; font-weight: bold; text-align: center; color: #fff;"> Complexe Scolaire IMMACULEE CONCEPTION DE LA CHARITE</h1>
+        <div class="devise" style="font-size: 2.5rem; font-weight: bold; text-align: center; white-space: nowrap; color: #fff;">« Scientia et Conscientia Splendet »</div>
+        
+        <!-- 🔐 Bouton Connexion -->
+        <a href="{{ url_for('connexion') }}" class="btn-connexion"><i class="bi bi-person-check"></i> Connexion</a>
+
+        <!-- ✅ Message défilant -->
+        <div class="marquee" style=" color: #fff;">Adresse : N°302, Avenue Hewa-Bora/ Commune Kampemba/Lubumbashi !</div>
+    </div>
+</body>
+</html>

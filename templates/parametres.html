@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Paramètres</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #002b55;
+        }
+        .card {
+            border-radius: 15px;
+            transition: 0.3s;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            color: #002b55;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        .card i {
+            font-size: 40px;
+            color: rgb(141, 106, 9);
+        }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container">
+    <h2 class="text-center text-primary mb-4" style="font-weight:bold; font-size: 45px; font-family: serif; color: #fff !important;"><i class="bi bi-gear-fill"></i> Paramètres</h2>
+
+    <div class="row row-cols-1 row-cols-md-2 g-4">
+        <!-- Paramètre 1 : Articles -->
+        <div class="col">
+            <a href="{{ url_for('ajouter_article') }}" class="text-decoration-none">
+                <div class="card shadow p-3 text-center">
+                    <i class="bi bi-bag-check-fill"></i>
+                    <h5 class="card-title">Articles</h5>
+                    <p class="card-text text-muted">Pulls, tenues EPS, training, etc.</p>
+                </div>
+            </a>
+        </div>
+
+        <!-- Paramètre 2 : Classes -->
+        <div class="col">
+            <a href="{{ url_for('gerer_classes') }}" class="text-decoration-none">
+                <div class="card shadow p-3 text-center">
+                    <i class="bi bi-building"></i>
+                    <h5 class="card-title">Classes</h5>
+                    <p class="card-text text-muted">Ajouter les classes.</p>
+                </div>
+            </a>
+        </div>
+        <!-- Paramètre 4 : Utilisateurs -->
+        <div class="col">
+            <a href="{{url_for('utilisateurs')}}" class="text-decoration-none">
+                <div class="card shadow p-3 text-center">
+                    <i class="bi bi-people-fill"></i>
+                    <h5 class="card-title">Utilisateurs</h5>
+                    <p class="card-text text-muted">Gérer les comptes des utilisateurs.</p>
+                </div>
+            </a>
+        </div>
+
+        <div class="col">
+            <a href="/menu" class="text-decoration-none">
+                <div class="card shadow p-3 text-center">
+                    <i class="bi bi-arrow-left-circle"></i>
+                    <h5 class="card-title">Retour</h5>
+                    <p class="card-text text-muted">Retour au menu principal.</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

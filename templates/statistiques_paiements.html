@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Statistiques des paiements</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+</head>
+<style>
+  .btn-outline-dark{
+    background-color: rgb(141, 106, 9);
+    color: white;
+    font-weight: bold;
+    border-radius: 5px;
+    padding: 6px 18px;
+    border: none;
+    text-decoration: none;
+  }
+
+  .btn-outline-dark:hover{
+    background-color: rgb(141, 106, 9);
+    
+  }
+
+  .sticky-form {
+          position: sticky;
+          top: 0;
+          background-color: white;
+          z-index: 1000;
+          padding: 20px 15px;
+          border-bottom: 2px solid #ccc;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+</style>
+<body class="bg-light p-4">
+
+<div class="container bg-white p-4 rounded shadow" style="max-width:1500px;">
+  <div class="sticky-form">
+    <div class="d-flex justify-content-between align-items-center mb-3" style="font-weight: bold; font-family: serif;">
+      <h2 class="text-primary" style="font-size:45px; color: #002b55 !important;">
+        <i class="fa-solid fa-chart-pie me-2"></i>Statistiques des paiements
+      </h2>
+      <a href="{{ url_for('gestion_minerval') }}" class="btn btn-outline-dark rounded-pill">
+        <i class="fa-solid fa-arrow-left me-1"></i> Retour
+      </a>
+    </div>
+
+    <!-- Formulaire de filtrage -->
+    <form method="GET" action="{{ url_for('statistiques_paiements') }}" class="row g-3 mb-4">
+      <div class="col-md-3">
+        <select name="mois" class="form-select">
+          <option value="">-- Mois --</option>
+          {% for m in ['Septembre','Octobre','Novembre','Décembre','Janvier','Février','Mars','Avril'] %}
+            <option value="{{ m }}" {% if mois == m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select name="classe" class="form-select">
+          <option value="">-- Classe --</option>
+          {% for cl in classes_disponibles %}
+            <option value="{{ cl }}" {% if classe == cl %}selected{% endif %}>{{ cl }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select name="section" class="form-select">
+          <option value="">-- Section --</option>
+          {% for sec in sections_disponibles %}
+            <option value="{{ sec }}" {% if section == sec %}selected{% endif %}>{{ sec }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="col-md-3">
+        <select name="annee_scolaire" class="form-select">
+          <option value="">-- Annee Scolaire --</option>
+          <option value="2025-2026" selected>2025-2026</option>
+          <option value="2026-2027">2026-2027</option>
+          <option value="2027-2028">2027-2028</option>
+        </select>
+      </div>
+
+      <div class="col-md-4">
+        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+          <i class="fa-solid fa-magnifying-glass me-1"></i> Rechercher
+        </button>
+      </div>
+      <div class="col-md-4">
+        <a href="{{ url_for('statistiques_paiements') }}" class="btn btn-secondary w-100 rounded-pill">
+          <i class="fa-solid fa-rotate-right me-1"></i> Réinitialiser
+        </a>
+      </div>
+      <div class="col-md-4">
+        <a href="{{ url_for('imprimer_pdf') }}?url={{ 
+            url_for('telecharger_statistiques_paiements', 
+                mois=mois, 
+                classe=classe, 
+                section=section, 
+                annee_scolaire=annee_scolaire
+            ) | urlencode 
+        }}" 
+        class="btn btn-success w-100 rounded-pill" target="_blank">
+            <i class="fa-solid fa-file-arrow-down me-1"></i> Imprimer
+        </a>
+
+      </div>
+       <!-- Résumé global -->
+      <div class="mt-4">
+        <h5>Total payé : {{ "{:,.1f}".format(total_paye_global) }} $</h5>
+        <h5>Total attendu : {{ "{:,.1f}".format(total_attendu_global) }} $</h5>
+        <h5>Écart : 
+          <span class="{% if ecart_global > 0 %}text-danger{% else %}text-success{% endif %}">
+            {{ "{:,.1f}".format(ecart_global) }} $
+          </span>
+        </h5>
+      </div>
+    </form>
+  </div>
+  {% if statistiques %}
+    <div class="table-responsive">
+      <table class="table table-bordered table-hover align-middle">
+        <thead class="table-dark text-center">
+          <tr>
+            <th>#</th>
+            <th>Classe</th>
+            <th>Section</th>
+            <th>Mois</th>
+            <th>Nombre d’élèves</th>
+            <th>Ayant payé</th>
+            <th>Total payé</th>
+            <th>Total attendu</th>
+            <th>Écart</th>
+          </tr>
+        </thead>
+        <tbody class="text-center">
+          {% for stat in statistiques %}
+            <tr>
+              <td>{{ loop.index }}</td>
+              <td>{{ stat.classe }}</td>
+              <td>{{ stat.section }}</td>
+              <td>{{ stat.mois }}</td>
+              <td>{{ stat.nb_eleves }}</td>
+              <td>{{ stat.nb_ayant_paye or 0 }}</td>
+              <td>{{ "{:,.1f}".format(stat.total_paye) }} $</td>
+              <td>{{ "{:,.1f}".format(stat.total_attendu) }} $</td>
+              <td class="{% if stat.total_paye < stat.total_attendu %}text-danger{% else %}text-success{% endif %}">
+                {{ "{:,.1f}".format(stat.total_attendu - stat.total_paye) }} $
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <p class="text-center text-muted">Aucune donnée à afficher.</p>
+  {% endif %}
+
+</div>
+
+</body>
+</html>

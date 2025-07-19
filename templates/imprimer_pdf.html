@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8" />
+    <title>Impression en cours...</title>
+</head>
+<body>
+    <h3>Ouverture de la fenêtre d'impression, merci de patienter...</h3>
+
+    <iframe id="pdfFrame" src="{{ url_pdf }}" style="width:1px; height:1px; border:none;"></iframe>
+
+    <script>
+        const iframe = document.getElementById('pdfFrame');
+
+        iframe.onload = function () {
+            // On attend un peu plus longtemps pour être sûr que le PDF est chargé
+            setTimeout(() => {
+                iframe.contentWindow.focus();
+                iframe.contentWindow.print();
+            }, 1500);
+        };
+    </script>
+</body>
+</html>

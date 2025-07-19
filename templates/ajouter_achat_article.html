@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Enregistrement d'une vente</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
+</head>
+<style>
+    label {
+            font-weight: bold;
+            color: #002b55;
+        }
+        body {
+            background-color: #002b55 !important;
+        }
+</style>
+<body class="bg-light" style="background-color:#002b55 !important;">
+
+<div class="container mt-4 p-4 bg-white shadow rounded">
+    <h4 style="color: #002b55; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-cart-plus"></i> Enregistrement d'une vente d’article</h4>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="post" action="{{ url_for('ajouter_achat_article') }}" class="row g-3 mt-3">
+
+        <!-- Matricule -->
+        <div class="col-md-3">
+            <label><i class="bi bi-person-badge"></i> Matricule :</label>
+            <input type="text" name="matricule" id="matricule" class="form-control" required>
+        </div>
+
+        <!-- Infos élève -->
+        <div class="col-md-3">
+            <label><i class="bi bi-person"></i> Nom :</label>
+            <input type="text" id="nom" class="form-control" readonly>
+        </div>
+        <div class="col-md-3">
+            <label><i class="bi bi-person"></i> Post-nom :</label>
+            <input type="text" id="postnom" class="form-control" readonly>
+        </div>
+        <div class="col-md-3">
+            <label><i class="bi bi-person"></i> Prénom :</label>
+            <input type="text" id="prenom" class="form-control" readonly>
+        </div>
+        <div class="col-md-2">
+            <label><i class="bi bi-gender-ambiguous"></i> Genre :</label>
+            <input type="text" id="genre" class="form-control" readonly>
+        </div>
+        <div class="col-md-2">
+            <label><i class="bi bi-diagram-3"></i> Section :</label>
+            <input type="text" id="section" class="form-control" readonly>
+        </div>
+        <div class="col-md-2">
+            <label><i class="bi bi-journal-text"></i> Classe :</label>
+            <input type="text" id="classe" class="form-control" readonly>
+        </div>
+        <div class="col-md-2">
+            <label><i class="bi bi-calendar-check"></i> Date :</label>
+            <input type="text" name="date_achat" value="{{ current_date }}" class="form-control" readonly>
+        </div>
+
+        <!-- Article -->
+        <div class="col-md-4">
+            <label><i class="bi bi-box"></i> Article :</label>
+            <select name="code_article" id="code_article" class="form-select" required>
+                <option value="">-- Choisir --</option>
+                {% for article in articles %}
+                <option value="{{ article.code }}" data-prix="{{ article.prix }}">{{ article.nom }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <!-- Quantité -->
+        <div class="col-md-2">
+            <label>Quantité :</label>
+            <input type="number" name="quantite" id="quantite" class="form-control" min="1" value="1" required>
+        </div>
+
+        <!-- Prix unitaire -->
+        <div class="col-md-2">
+            <label><i class="bi bi-cash-stack"></i> Prix unitaire ($) :</label>
+            <input type="text" name="prix_unitaire" id="prix_unitaire" class="form-control" readonly>
+        </div>
+
+        <!-- Total -->
+        <div class="col-md-2">
+            <label><i class="bi bi-cash-stack"></i> Total ($) :</label>
+            <input type="text" id="total" class="form-control" readonly>
+        </div>
+
+        <!-- Caissier -->
+        <div class="col-md-4">
+            <label><i class="bi bi-person-circle"></i> Caissier :</label>
+            <input type="text" name="caissier" class="form-control" value="{{ caissier_nom }}" readonly>
+
+        </div>
+
+        <div class="col-12">
+            <button type="submit" class="btn btn-success" style="background-color: #065f0b; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
+            <a href="{{ url_for('menu_frais_et_stock') }}" class="btn btn-secondary" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; "><i class="bi bi-arrow-left"></i> Retour</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Quand on sort du champ matricule, récupérer les infos de l'élève
+    document.getElementById('matricule').addEventListener('blur', function () {
+        fetch(`/infos_eleve/${this.value}`)
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('nom').value = data.nom || "";
+                document.getElementById('postnom').value = data.postnom || "";
+                document.getElementById('prenom').value = data.prenom || "";
+                document.getElementById('genre').value = data.genre || "";
+                document.getElementById('section').value = data.section || "";
+                document.getElementById('classe').value = data.classe || "";
+            });
+    });
+
+    // Fonction pour mettre à jour les prix et le total
+    function updatePrixTotal() {
+        const article = document.getElementById('code_article');
+        const selected = article.options[article.selectedIndex];
+        const prix = parseFloat(selected.getAttribute('data-prix')) || 0;
+        const quantite = parseInt(document.getElementById('quantite').value) || 0;
+        document.getElementById('prix_unitaire').value = prix.toFixed(1);
+        document.getElementById('total').value = (prix * quantite).toFixed(1);
+    }
+
+    // ➕ Ajout des événements pour mettre à jour automatiquement
+    document.getElementById('code_article').addEventListener('change', updatePrixTotal);
+    document.getElementById('quantite').addEventListener('input', updatePrixTotal);
+</script>
+

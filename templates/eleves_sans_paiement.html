@@ -1,0 +1,127 @@
+<!DOCTYPE html><html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Élèves sans paiement</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <style>
+        .table thead th {
+            position: sticky;
+            top: 0;
+            background-color: black;
+            color: white;
+            z-index: 10;
+        }
+        
+        .sticky-form {
+          position: sticky;
+          top: 0;
+          background-color: white;
+          z-index: 1000;
+          padding: 20px 15px;
+          border-bottom: 2px solid #ccc;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .btn-dark {
+            background-color: rgb(141, 106, 9);
+            color: white;
+            font-weight: bold;
+            border-radius: 5px;
+            padding: 6px 18px;
+            border: none;
+            text-decoration: none;
+        }
+        .btn-dark:hover{
+          background-color: rgb(141, 106, 9);
+        }
+</style>
+
+</head>
+<body class="bg-light p-4" style="background-color: #fff !important;">
+<div class="container bg-white p-4 rounded shadow" style="max-width:1500px;">
+    <div class="sticky-form">
+        <h2 class="text-center mb-4 text-primary" style="font-weight: bold; font-size: 45px; color: #d41111ff !important; font-family: serif;">
+            <i class="fa-solid fa-ban me-2"></i>Élèves sans paiement
+        </h2>
+        <form method="POST" class="row g-3 mb-2">
+            <div class="col-md-4">
+                <input type="text" name="filtre_matricule" class="form-control" placeholder="🔍 Matricule..." value="{{ filtre_matricule }}">
+            </div>
+            <div class="col-md-4">
+                <select name="filtre_classe" class="form-select">
+                    <option value="">-- Classe --</option>
+                    {% for classe in classes %}
+                        <option value="{{ classe }}" {% if filtre_classe == classe %}selected{% endif %}>{{ classe }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <select name="filtre_mois" class="form-select">
+                    <option value="">-- Mois --</option>
+                    {% for mois in mois_disponibles %}
+                        <option value="{{ mois }}" {% if filtre_mois == mois %}selected{% endif %}>{{ mois }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                    <i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher
+                </button>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('eleves_sans_paiement') }}" class="btn btn-secondary w-100 rounded-pill">
+                    <i class="fa-solid fa-rotate-right me-1"></i>Réinitialiser
+                </a>
+            </div>
+            <div class="col-md-4">
+                <a href="{{ url_for('imprimer_pdf') }}?url={{ 
+                    url_for('telecharger_sans_paiement', 
+                        filtre_matricule=filtre_matricule, 
+                        filtre_classe=filtre_classe, 
+                        filtre_mois=filtre_mois
+                    ) | urlencode 
+                }}" 
+                class="btn btn-success w-100 rounded-pill" target="_blank">
+                    <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
+                </a>
+
+             </div>
+             <div class="col-md-12 text-end">
+                <a href="{{ url_for('gestion_minerval') }}" class="btn btn-dark rounded-pill">
+                    <i class="fa-solid fa-arrow-left me-1"></i> Retour au menu
+                </a>
+            </div>
+        </form>
+    </div><div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
+    <table class="table table-bordered table-striped align-middle">
+        <thead class="table-dark text-center">
+            <tr>
+                <th>#</th>
+                <th>Matricule</th>
+                <th>Nom complet</th>
+                <th>Classe</th>
+                <th>Section</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for e in resultats %}
+            <tr class="text-center">
+                <td>{{ loop.index }}</td>
+                <td>{{ e.matricule }}</td>
+                <td>{{ e.nom }} {{ e.postnom }} {{ e.prenom }}</td>
+                <td>{{ e.classe }}</td>
+                <td>{{ e.section }}</td>
+            </tr>
+            {% else %}
+            <tr>
+                <td colspan="5" class="text-center text-muted">Aucun élève trouvé.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+</div>
+</body>
+</html>
