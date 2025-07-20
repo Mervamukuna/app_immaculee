@@ -8,7 +8,7 @@
 <style>
 
         body {
-            background-color: #002b55!important;
+            background-color: #114199 !important;
         }
 
         .table thead th {
@@ -34,27 +34,27 @@
           box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
 </style>
-<body class="p-4 bg-light" style="background-color:#002b55 !important">
+<body class="p-4 bg-light" style="background-color:#114199 !important">
 <div class="sticky-form">
 <div class="container bg-white p-4 rounded shadow">
-    <h4 class="mb-4 text-center text-primary" style="color: #002b55 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-person-plus-fill"></i> Gestion des utilisateurs</h4>
+    <h4 class="mb-4 text-center text-primary" style="color: #114199 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-person-plus-fill"></i> Gestion des utilisateurs</h4>
 
     <!-- Formulaire d'ajout -->
     <form method="POST" action="{{ url_for('utilisateurs') }}" class="row g-3 mb-4">
         <div class="col-md-4">
-            <label style="font-weight:bold; color: #002b55;">Nom :</label>
+            <label style="font-weight:bold; color: #114199;">Nom :</label>
             <input type="text" name="nom" class="form-control" required>
         </div>
         <div class="col-md-4">
-            <label style="font-weight:bold; color: #002b55;">Prénom :</label>
+            <label style="font-weight:bold; color: #114199;">Prénom :</label>
             <input type="text" name="prenom" class="form-control" required>
         </div>
         <div class="col-md-4">
-            <label style="font-weight:bold; color: #002b55;">Mot de passe :</label>
+            <label style="font-weight:bold; color: #114199;">Mot de passe :</label>
             <input type="password" name="mot_de_passe" class="form-control" required>
         </div>
         <div class="col-md-4">
-            <label style="font-weight:bold; color: #002b55;">Rôle :</label>
+            <label style="font-weight:bold; color: #114199;">Rôle :</label>
             <select name="role" class="form-select" required>
                 <option value="">-- Choisir --</option>
                 <option value="full">full</option>
@@ -65,10 +65,10 @@
             </select>
         </div>
         <div class="col-md-4 align-self-end">
-            <button type="submit" class="btn btn-primary"  style="background-color: #065f0b; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
+            <button type="submit" class="btn btn-primary"  style="background-color: #114199; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
         </div>
         <div class="col-md-4 align-self-end">
-            <a href="{{ url_for('parametres') }}" class="btn btn-outline-secondary mt-3" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; ">
+            <a href="{{ url_for('parametres') }}" class="btn btn-outline-secondary mt-3" style="background-color: #a10505; color: white; font-weight: bold; ">
                     <i class="bi bi-arrow-left"></i> Retour au menu
             </a>
         </div>

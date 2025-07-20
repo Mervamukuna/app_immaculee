@@ -21,34 +21,34 @@
     }
 
     .btn-custom {
-      background-color: #002b55;
+      background-color: #114199;
       color: #fff;
       font-weight: bold;
     }
 
     .btn-custom:hover {
-      background-color: #002b55;
+      background-color: #114199;
       color: #fff;
     }
 
     .btn-retour {
-      background-color: rgb(141, 106, 9);
+      background-color: #a10505;
       color: #fff;
       font-weight: bold;
     }
 
     .btn-retour:hover{
-      background-color: rgb(141, 106, 9);
+      background-color:#a10505;
     }
 
     .btn-inscription {
-      background-color: rgb(141, 106, 9);
+      background-color: #114199;
       color: #fff;
       font-weight: bold;
     }
     
     .btn-inscription:hover{
-      background-color: rgb(141, 106, 9);
+      background-color: #114199;
     }
     .table-container {
       max-height: 500px;
@@ -67,7 +67,7 @@
     }
 
     .bg-titre {
-      background-color: #002b55;
+      background-color: #114199;
       color: #fff;
       padding: 10px 20px;
       border-radius: 10px;
@@ -76,23 +76,23 @@
     }
 
     .btn-edit {
-      background-color: #002b55;
+      background-color: #114199;
       color: #fff;
       border: none;
     }
 
     .btn-edit:hover {
-      background-color: #002b55;
+      background-color: #114199;
     }
 
     .btn-delete {
-      background-color: #af0404;
+      background-color: #a10505;
       color: #fff;
       border: none;
     }
 
     .btn-delete:hover {
-      background-color: #c62828;
+      background-color:#a10505;
     }
     .sticky-wrapper {
         position: sticky;
@@ -106,7 +106,7 @@
   </style>
 </head>
 <body>
-  <div class="container-fluid px-4">
+  <div class="container-fluid px-4" style="margin-top:-15px;">
     <div class="card shadow card-custom mt-4">
 
       {% with messages = get_flashed_messages() %}
@@ -145,7 +145,7 @@
       </div>
       {% if classe %}
         <div class="mb-3 d-flex justify-content-end">
-          <a href="{{ url_for('imprimer_pdf') }}?url={{ url_for('telecharger_pdf', classe=classe) | urlencode }}" class="btn btn-success fw-bold"  target="_blank"><i class="bi bi-download"></i>Imprimer  PDF - Classe {{ classe }}
+          <a href="{{ url_for('imprimer_pdf') }}?url={{ url_for('telecharger_pdf', classe=classe) | urlencode }}" class="btn btn-success fw-bold"  target="_blank" style="background-color:#114199;"><i class="bi bi-download"></i>Imprimer  PDF - Classe {{ classe }}
           </a>
         </div>
         

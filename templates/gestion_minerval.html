@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         body {
-            background-color: #002b55;
+            background-color: #114199;
             color: white;
             padding: 30px;
         }
@@ -35,7 +35,7 @@
         .card-minerval i {
             font-size: 35px;
             margin-bottom: 10px;
-            color: rgb(141, 106, 9);
+            color: #380000;
         }
 
         .section-title {
@@ -46,7 +46,7 @@
         }
 
         .btn-retour {
-            background-color: rgb(141, 106, 9);
+            background-color: #380000;
             color: white;
             font-weight: bold;
             border-radius: 5px;
@@ -56,7 +56,7 @@
         }
 
         .btn-retour:hover {
-            background-color: rgb(141, 106, 9);
+            background-color: #380000;
         }
     </style>
 </head>
@@ -70,7 +70,7 @@
             <a href="/paiement" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-cash-coin"></i>
-                    <div>Enregistrer un paiement</div>
+                    <div style="color: #380000;">Enregistrer un paiement</div>
                 </div>
             </a>
         </div>
@@ -78,7 +78,7 @@
             <a href="/historique_paiements" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-clock-history"></i>
-                    <div>Historique des paiements</div>
+                    <div style="color: #380000;">Historique des paiements</div>
                 </div>
             </a>
         </div>
@@ -86,7 +86,7 @@
             <a href="{{ url_for('eleves_non_en_ordre') }}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-exclamation-triangle"></i>
-                    <div>Élèves en ordre partiel</div>
+                    <div style="color: #380000;">Élèves en ordre partiel</div>
                 </div>
             </a>
         </div>
@@ -94,7 +94,7 @@
             <a href="{{ url_for('eleves_en_ordre') }}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-check-circle"></i>
-                    <div>Élèves en ordre</div>
+                    <div style="color: #380000;">Élèves en ordre</div>
                 </div>
             </a>
         </div>
@@ -102,7 +102,7 @@
             <a href="{{ url_for('eleves_sans_paiement') }}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-x-circle"></i>
-                    <div>Élèves sans paiement</div>
+                    <div style="color: #380000;">Élèves sans paiement</div>
                 </div>
             </a>
         </div>
@@ -110,7 +110,7 @@
             <a href="{{ url_for('statistiques_paiements') }}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-bar-chart-line"></i>
-                    <div>Statistiques</div>
+                    <div style="color: #380000;">Statistiques</div>
                 </div>
             </a>
         </div>
@@ -118,7 +118,7 @@
             <a href="{{url_for('rapport_global_paiements')}}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-graph-up-arrow"></i>
-                    <div>Rapport global</div>
+                    <div style="color: #380000;">Rapport global</div>
                 </div>
             </a>
         </div>
@@ -126,7 +126,7 @@
             <a href="{{ url_for('menu') }}" class="text-decoration-none">
                 <div class="card-minerval h-100">
                     <i class="bi bi-arrow-left"></i>
-                    <div>Retour au menu</div>
+                    <div style="color: #380000;">Retour au menu</div>
                 </div>
             </a>
         </div>

@@ -31,29 +31,29 @@
           box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
     </style>
-<body class="p-4" style="background-color: #002b55;">
+<body class="p-4" style="background-color: #114199;">
 <div class="sticky-form">
 <div class="container bg-white p-4 rounded shadow">
-    <h4 class="mb-4 text-primary" style="color: #002b55 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-box"></i> Gestion des articles</h4>
+    <h4 class="mb-4 text-primary" style="color: #114199 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-box"></i> Gestion des articles</h4>
 
     <!-- Formulaire -->
     <form method="POST" class="row g-3">
         <div class="col-md-4">
-            <label class="form-label" style="font-weight:bold; color: #002b55;">Code article</label>
+            <label class="form-label" style="font-weight:bold; color: #114199;">Code article</label>
             <input type="text" name="code" class="form-control" required>
         </div>
         <div class="col-md-5">
-            <label class="form-label" style="font-weight:bold; color: #002b55;">Désignation</label>
+            <label class="form-label" style="font-weight:bold; color: #114199;">Désignation</label>
             <input type="text" name="nom" class="form-control" required>
         </div>
         <div class="col-md-3">
-            <label class="form-label" style="font-weight:bold; color: #002b55;">Prix ($)</label>
+            <label class="form-label" style="font-weight:bold; color: #114199;">Prix ($)</label>
             <input type="number" step="0.01" name="prix" class="form-control" required>
         </div>
         <div class="mt-4 text-center">
-            <button type="submit" class="btn btn-success"  style="background-color: #065f0b; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
+            <button type="submit" class="btn btn-success"  style="background-color: #114199; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
 
-            <a href="{{ url_for('parametres') }}" class="btn btn-outline-dark " style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; ">
+            <a href="{{ url_for('parametres') }}" class="btn btn-outline-dark " style="background-color: #a10505; color: white; font-weight: bold; ">
                 <i class="fa-solid fa-arrow-left me-1"></i> Retour
             </a>
         </div>

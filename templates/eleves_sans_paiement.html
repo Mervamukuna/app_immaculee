@@ -24,7 +24,7 @@
         }
 
         .btn-dark {
-            background-color: rgb(141, 106, 9);
+            background-color: #a10505;
             color: white;
             font-weight: bold;
             border-radius: 5px;
@@ -33,7 +33,7 @@
             text-decoration: none;
         }
         .btn-dark:hover{
-          background-color: rgb(141, 106, 9);
+          background-color: #a10505;
         }
 </style>
 
@@ -41,7 +41,7 @@
 <body class="bg-light p-4" style="background-color: #fff !important;">
 <div class="container bg-white p-4 rounded shadow" style="max-width:1500px;">
     <div class="sticky-form">
-        <h2 class="text-center mb-4 text-primary" style="font-weight: bold; font-size: 45px; color: #d41111ff !important; font-family: serif;">
+        <h2 class="text-center mb-4 text-primary" style="font-weight: bold; font-size: 45px; color: #114199 !important; font-family: serif;">
             <i class="fa-solid fa-ban me-2"></i>Élèves sans paiement
         </h2>
         <form method="POST" class="row g-3 mb-2">
@@ -65,12 +65,12 @@
                 </select>
             </div>
             <div class="col-md-4">
-                <button type="submit" class="btn btn-primary w-100 rounded-pill">
+                <button type="submit" class="btn btn-primary w-100 rounded-pill" style="background-color:#114199;">
                     <i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher
                 </button>
             </div>
             <div class="col-md-4">
-                <a href="{{ url_for('eleves_sans_paiement') }}" class="btn btn-secondary w-100 rounded-pill">
+                <a href="{{ url_for('eleves_sans_paiement') }}" class="btn btn-secondary w-100 rounded-pill" style="background-color:#a10505;">
                     <i class="fa-solid fa-rotate-right me-1"></i>Réinitialiser
                 </a>
             </div>
@@ -82,7 +82,7 @@
                         filtre_mois=filtre_mois
                     ) | urlencode 
                 }}" 
-                class="btn btn-success w-100 rounded-pill" target="_blank">
+                class="btn btn-success w-100 rounded-pill" target="_blank" style="background-color:#114199;">
                     <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
                 </a>
 

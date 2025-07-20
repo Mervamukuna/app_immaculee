@@ -31,7 +31,7 @@
     }
 
     .btn-dark {
-            background-color: rgb(141, 106, 9);
+            background-color: #a10505;
             color: white;
             font-weight: bold;
             border-radius: 5px;
@@ -40,7 +40,7 @@
             text-decoration: none;
         }
     .btn-dark:hover{
-      background-color: rgb(141, 106, 9);
+      background-color: #a10505;
     }
   </style>
 </head>
@@ -50,7 +50,7 @@
 
   <!-- 🔒 FORMULAIRE FIGÉ -->
   <div class="sticky-form">
-    <h2 class="text-center mb-4" style="font-weight: bold; font-size: 40px; color: #002b55; font-family: serif;">
+    <h2 class="text-center mb-4" style="font-weight: bold; font-size: 40px; color: #114199; font-family: serif;">
       <i class="fa-solid fa-triangle-exclamation me-2"></i>Élèves partiellement en ordre
     </h2>
     
@@ -76,12 +76,12 @@
       </div>
 
       <div class="col-md-4">
-        <button type="submit" class="btn btn-primary w-100 rounded-pill">
+        <button type="submit" class="btn btn-primary w-100 rounded-pill" style="background-color:#114199;">
           <i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher
         </button>
       </div>
       <div class="col-md-4">
-        <a href="{{ url_for('eleves_non_en_ordre') }}" class="btn btn-secondary w-100 rounded-pill">
+        <a href="{{ url_for('eleves_non_en_ordre') }}" class="btn btn-secondary w-100 rounded-pill" style="background-color:#a10505;">
           <i class="fa-solid fa-rotate-right me-1"></i>Réinitialiser
         </a>
       </div>
@@ -93,7 +93,7 @@
                 filtre_mois=filtre_mois
             ) | urlencode 
         }}" 
-        class="btn btn-success w-100 rounded-pill" target="_blank">
+        class="btn btn-success w-100 rounded-pill" target="_blank" style="background-color:#114199;">
             <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
         </a>
 
@@ -137,7 +137,7 @@
           <td class="text-danger fw-bold">{{ e.montant_a_payer }} $</td>
           <td>{{ e.date_paiement }}</td>
           <td>
-            <a href="{{ url_for('finaliser_paiement', matricule=e.matricule, mois=e.mois) }}" class="btn btn-sm btn-outline-primary rounded-pill">
+            <a href="{{ url_for('finaliser_paiement', matricule=e.matricule, mois=e.mois) }}" class="btn btn-sm btn-outline-primary rounded-pill" style="border-color: #114199; color: #114199;">
               <i class="fa-solid fa-pen-to-square me-1"></i> Finaliser
             </a>
           </td>

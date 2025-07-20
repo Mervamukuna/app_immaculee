@@ -31,7 +31,7 @@
         }
 
         .btn-dark {
-            background-color: rgb(141, 106, 9);
+            background-color: #a10505;
             color: white;
             font-weight: bold;
             border-radius: 5px;
@@ -40,7 +40,7 @@
             text-decoration: none;
         }
         .btn-dark:hover{
-          background-color: rgb(141, 106, 9);
+          background-color: #a10505;
         }
     </style>
 </head>
@@ -50,7 +50,7 @@
     
     <!-- 🔒 FORMULAIRE FIGÉ -->
     <div class="sticky-form">
-        <h2 class="text-center mb-4 text-success" style="font-weight: bold; font-size: 45px; color: #002b55; font-family: serif;">
+        <h2 class="text-center mb-4 text-success" style="font-weight: bold; font-size: 45px; color: #114199 !important; font-family: serif;">
             <i class="fa-solid fa-circle-check me-2"></i>Élèves totalement en ordre
         </h2>
 
@@ -76,12 +76,12 @@
             </div>
 
             <div class="col-md-4">
-                <button type="submit" class="btn btn-success w-100 rounded-pill">
+                <button type="submit" class="btn btn-success w-100 rounded-pill" style="background-color: #114199;">
                     <i class="fa-solid fa-magnifying-glass me-1"></i>Rechercher
                 </button>
             </div>
             <div class="col-md-4">
-                <a href="{{ url_for('eleves_en_ordre') }}" class="btn btn-secondary w-100 rounded-pill">
+                <a href="{{ url_for('eleves_en_ordre') }}" class="btn btn-secondary w-100 rounded-pill" style="background-color:#a10505;">
                     <i class="fa-solid fa-rotate-right me-1"></i>Réinitialiser
                 </a>
             </div>
@@ -95,7 +95,7 @@
                         filtre_caissier=filtre_caissier
                     ) | urlencode 
                 }}" 
-                class="btn btn-success w-100 rounded-pill" target="_blank">
+                class="btn btn-success w-100 rounded-pill" target="_blank" style="background-color: #114199;">
                     <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
                 </a>
 

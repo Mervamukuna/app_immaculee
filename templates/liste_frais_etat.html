@@ -37,11 +37,11 @@
 <div class="container bg-white p-4 rounded shadow" style="max-width:1500px;">
     <div class="sticky-form">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h3 class="text-primary" style="color:#002b55 !important; font-size: 45px; font-family: serif; font-weight: bold;">
+            <h3 class="text-primary" style="color: #114199 !important; font-size: 45px; font-family: serif; font-weight: bold;">
                 <i class="bi bi-list-check me-2"></i> Liste des paiements - Frais de l'État
             </h3>
             <div>
-                <a href="{{ url_for('menu_frais_et_stock') }}" class="btn btn-outline-secondary me-2" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; ">
+                <a href="{{ url_for('menu_frais_et_stock') }}" class="btn btn-outline-secondary me-2" style="background-color: #a10505; color: white; font-weight: bold; ">
                     <i class="bi bi-arrow-left"></i> Retour
                 </a>
                 <a href="{{ url_for('imprimer_pdf') }}?url={{ url_for('exporter_frais_etat_pdf',
@@ -54,7 +54,7 @@
                 ) | urlencode }}"
                    target="_blank"
                    class="btn btn-primary"
-                   style="background-color: #065f0b; color: white; font-weight: bold;">
+                   style="background-color:  #114199; color: white; font-weight: bold;">
                     <i class="fa-solid fa-file-arrow-down me-1"></i> Imprimer PDF
                 </a>
 
@@ -116,7 +116,7 @@
             </div>
 
             <div class="col-md-3 d-grid align-items-end">
-                <button type="submit" class="btn btn-primary">
+                <button type="submit" class="btn btn-primary" style="background-color: #114199;">
                     <i class="bi bi-funnel-fill"></i> Filtrer
                 </button>
             </div>

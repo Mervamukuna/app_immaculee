@@ -8,26 +8,26 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet" />
     <style>
         body {
-            background-color: #002b55;
+            background-color: #114199;
         }
         .menu-card {
             border-radius: 15px;
             transition: 0.3s;
             box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            color: #002b55;
+            color: #380000;
         }
         .menu-card:hover {
             transform: translateY(-5px);
         }
         .icon {
             font-size: 40px;
-            color: rgb(141, 106, 9);
+            color: #380000;
         }
     </style>
 </head>
 <body>
 <div class="container py-5">
-    <h2 class="text-center mb-5 text-primary" style="font-weight:bold; font-size: 45px; font-family: serif; color: #fff !important;">🧾 Achat article & Frais de l'État</h2>
+    <h2 class="text-center mb-5 text-primary" style="font-weight:bold; font-size: 45px; font-family: serif; color: #fff !important;"> Achat article & Frais de l'État</h2>
 
     <div class="row g-4">
         <div class="col-md-4">
@@ -43,7 +43,7 @@
         <div class="col-md-4">
             <a href="{{url_for('liste_frais_etat')}}" class="text-decoration-none">
                 <div class="bg-white p-4 text-center menu-card">
-                    <i class="bi bi-list-check me-3" style="font-size:40px; color: rgb(141, 106, 9) ;"></i>
+                    <i class="bi bi-list-check me-3" style="font-size:40px; color: #380000 ;"></i>
                     <h5>Historique Frais de l'etat</h5>
                     <p class="text-muted">Voir tous les paiements</p>
                 </div>
@@ -63,7 +63,7 @@
         <div class="col-md-4">
             <a href="{{url_for('historique_achats')}}" class="text-decoration-none">
                 <div class="bg-white p-4 text-center menu-card">
-                    <i class="bi bi-clock-history" style="font-size:40px; color: rgb(141, 106, 9) ;"></i>
+                    <i class="bi bi-clock-history" style="font-size:40px; color: #380000 ;"></i>
                     <h5>Historique des ventes</h5>
                     <p class="text-muted">Consulter l'historique des ventes</p>
                 </div>

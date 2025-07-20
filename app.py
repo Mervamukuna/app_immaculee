@@ -19,6 +19,8 @@ from werkzeug.security import check_password_hash, generate_password_hash
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 import sqlite3
 from sms_sender import envoyer_sms
+from urllib.parse import unquote
+from flask import request, render_template
 
 
 def verifier_autorisation(section_cible):
@@ -46,10 +48,33 @@ def verifier_autorisation(section_cible):
 
 #Creation de l'application Flask
 app = Flask(__name__)
-app.secret_key = 't0n_c0de_secret_ici'  # Clé secrète pour la session
+app.secret_key = 'abc123xyz'  # Clé secrète pour la session
+
+from functools import wraps
+from flask import session, redirect, url_for, flash
+
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if not session.get('connecte'):
+            flash("Vous devez être connecté pour accéder à cette page.", "warning")
+            return redirect(url_for('connexion'))
+        return f(*args, **kwargs)
+    return decorated_function
+
+def log_action(action, nom_utilisateur):
+    date_heure = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    ligne = f"[{date_heure}] {nom_utilisateur} : {action}\n"
+    with open("log.txt", "a", encoding="utf-8") as fichier:
+        fichier.write(ligne)
+
+@app.route('/')
+def racine():
+    return redirect(url_for('connexion'))
 
 #Route pour la page index
-@app.route('/')
+@app.route('/accueil')
+@login_required
 def accueil():
     return render_template('index.html')
 
@@ -76,25 +101,33 @@ def connexion():
             session['user_id'] = utilisateur[0]
             session['nom_utilisateur'] = f"{utilisateur[1]} {utilisateur[2]}"
             session['role_utilisateur'] = utilisateur[3]
-            return redirect(url_for('menu'))
+            log_action("Connexion réussie", session['nom_utilisateur'])
+            return redirect(url_for('accueil'))
+
         else:
             flash("Identifiants incorrects", "danger")
             return redirect(url_for('connexion'))
 
     return render_template('connexion.html')
 
+@app.route('/deconnexion')
+def deconnexion():
+    session.clear()
+    
+    return redirect(url_for('connexion'))
+
 
 @app.route("/profil")
+@login_required
 def profil():
     if not session.get("connecte"):
         return redirect(url_for("connexion"))
     return render_template("profil.html")
 
-
-
 import hashlib
 
 @app.route('/changer_mot_de_passe', methods=['GET', 'POST'])
+@login_required
 def changer_mot_de_passe():
     if 'nom_utilisateur' not in session:
         flash("Veuillez vous connecter d'abord", "danger")
@@ -130,24 +163,22 @@ def changer_mot_de_passe():
             conn.close()
 
             flash("Mot de passe mis à jour avec succès", "success")
+            log_action("Changement de mot de passe", session['nom_utilisateur'])
             return redirect(url_for('menu'))
         else:
             conn.close()
             flash("Ancien mot de passe incorrect", "danger")
+            log_action("Changement mot de passe echoué", session['nom_utilisateur'])
             return redirect(url_for('changer_mot_de_passe'))
 
     return render_template('changer_mot_de_passe.html')
 
 
-
-
 #Route Menu
 @app.route('/menu')
+@login_required
 def menu():
-    #role = session.get('role_utilisateur', '')
-    #if role == 'lecture':
-        #flash("Vous n'avez pas les droits pour effectuer cette action.", "danger")
-        #return redirect(url_for('menu'))  # Ou vers une page où il peut juste consulter
+
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
         # Total frais Maternelle
@@ -236,6 +267,7 @@ def menu():
 
 #Route formulaire d'inscription
 @app.route('/inscription', methods=['GET', 'POST'])
+@login_required
 def inscription():
     role = session.get('role_utilisateur', '')
 
@@ -302,6 +334,8 @@ def inscription():
                 frais_bulletin, deux_savons, deux_ph, fournitures
             ))
 
+            log_action("inscription enregistré", session['nom_utilisateur'])
+
             # 3. Génération du matricule
             eleve_id = cursor.lastrowid
             annee_fin = annee_scolaire.split('-')[1] if '-' in annee_scolaire else annee_scolaire
@@ -310,7 +344,7 @@ def inscription():
 
             conn.commit()
             # Message de bienvenue
-            message = f"Bonjour ! Votre enfant {nom} {postnom} {prenom} a été inscrit avec succès. Merci pour votre confiance."
+            message = f"C.S.Immaculée Conception de la Charité : Bonjour ! Votre enfant {nom} {postnom} {prenom} a été inscrit avec succès. Merci pour votre confiance."
 
             # Envoi du SMS
             envoyer_sms(telephone_responsable, message)
@@ -387,6 +421,7 @@ def inscription():
 
 #Route telechargemenr recu
 @app.route('/telecharger_recu/<matricule>')
+@login_required
 def telecharger_recu_pdf(matricule):
     role = session.get('role_utilisateur', '')
 
@@ -402,6 +437,7 @@ def telecharger_recu_pdf(matricule):
         return f"Reçu introuvable pour le matricule {matricule}", 404
 
 @app.route('/get_classes/<section>')
+@login_required
 def get_classes(section):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
@@ -419,6 +455,7 @@ def get_classes(section):
     return jsonify([row[0] for row in resultats])
 
 @app.route('/get_frais/<nom_classe>/<statut>')
+@login_required
 def get_frais(nom_classe, statut):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
@@ -445,6 +482,7 @@ def get_frais(nom_classe, statut):
 
 
 @app.route('/liste', methods=['GET', 'POST'])
+@login_required
 def liste_eleves():
    
     conn = sqlite3.connect('ecole.db')
@@ -479,6 +517,7 @@ def liste_eleves():
     return render_template('liste.html', eleves=eleves, classe=classe or "", recherche=recherche or "", classes=classes)
 
 @app.route('/telecharger_pdf/<classe>')
+@login_required
 def telecharger_pdf(classe):
     
     conn = sqlite3.connect('ecole.db')
@@ -491,6 +530,7 @@ def telecharger_pdf(classe):
     """, (classe,))
 
     eleves = curseur.fetchall()
+    log_action("Telechargement liste enregistré", session['nom_utilisateur'])
     conn.close()
 
     buffer = io.BytesIO()
@@ -580,6 +620,7 @@ def telecharger_pdf(classe):
     return send_file(buffer, as_attachment=False, download_name=f"liste_{classe}.pdf", mimetype='application/pdf')
 
 @app.route('/modifier/<int:id>', methods=['GET', 'POST'])
+@login_required
 def modifier_eleve(id):
     role = session.get('role_utilisateur', '')
 
@@ -641,7 +682,7 @@ def modifier_eleve(id):
             frais_bulletin, ram_papier, deux_savons, deux_ph, fournitures,
             id
         ))
-
+        log_action("Modification eleve enregistré", session['nom_utilisateur'])
         conn.commit()
         conn.close()
         return redirect(url_for('liste_eleves'))
@@ -657,6 +698,7 @@ def modifier_eleve(id):
     return render_template('modifier.html', eleve=eleve)
 
 @app.route('/supprimer/<int:id>', methods=['GET'])
+@login_required
 def supprimer_eleve(id):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
@@ -673,15 +715,19 @@ def supprimer_eleve(id):
     conn.close()
 
     flash("Élève supprimé avec succès.", "success")
+    log_action("Suppression eleve enregistré", session['nom_utilisateur'])
     return redirect(url_for('liste_eleves'))
 
 @app.route("/gestion_minerval")
+@login_required
 def gestion_minerval():
+    log_action("Acces gestion minerval enregistré", session['nom_utilisateur'])
     return render_template("gestion_minerval.html")
 
 
 # 📌 Route : Paiement
 @app.route('/paiement', methods=['GET', 'POST'])
+@login_required
 def paiement():
     role = session.get('role_utilisateur', '')
     if role == 'lecture':
@@ -790,7 +836,7 @@ def paiement():
                 matricule, mois, annee_scolaire, montant_paye, montant_a_payer, montant_restant,
                 mode_paiement, date_paiement, observation
             ))
-
+            log_action("Paiement enregistré", session['nom_utilisateur'])
             paiement_id = cursor.lastrowid
             conn.commit()
             conn = sqlite3.connect('ecole.db')
@@ -807,7 +853,7 @@ def paiement():
 
             conn.close()
 
-            message = f"Bonjour, nous confirmons le paiement de {montant_paye}$ du mois de {mois} pour l'élève {nom} {postnom} {prenom} ({matricule}). le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
+            message = f"C.S.Immaculée Conception de la Charité : Bonjour, nous confirmons le paiement de {montant_paye}$ du mois de {mois} pour l'élève {nom} {postnom} {prenom} ({matricule}). le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
             envoyer_sms(telephone_responsable, message)
 
             conn.close()
@@ -834,6 +880,7 @@ def paiement():
 
 
 @app.route('/confirmation_paiement')
+@login_required
 def confirmation_paiement():
     # Ces données doivent être passées via redirect avec query string ou session selon ton choix
     matricule = request.args.get('matricule')
@@ -857,6 +904,7 @@ def confirmation_paiement():
                            paiement_id=paiement_id)
 
 @app.route('/recu_paiement/<int:id>')
+@login_required
 def recu_paiement(id):
     role = session.get('role_utilisateur', '')
 
@@ -938,7 +986,9 @@ def recu_paiement(id):
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
         return "Une erreur s’est produite lors de la génération du reçu.", 500
+
 @app.route('/infos_eleve/<matricule>')
+@login_required
 def infos_eleve(matricule):
     conn = sqlite3.connect('ecole.db')
     conn.row_factory=sqlite3.Row
@@ -986,6 +1036,7 @@ def infos_eleve(matricule):
     })
 
 @app.route('/historique_paiements', methods=['GET', 'POST'])
+@login_required
 def historique_paiements():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory=sqlite3.Row
@@ -1011,6 +1062,7 @@ def historique_paiements():
         FROM paiements p
         JOIN eleves e ON p.matricule = e.matricule
         WHERE 1=1
+
     """
     params = []
 
@@ -1090,6 +1142,7 @@ def historique_paiements():
     )
 
 @app.route('/telecharger_historique_paiement')
+@login_required
 def telecharger_historique_paiement():
     # Récupération des filtres
     filtre_matricule = request.args.get('filtre_matricule', '').strip()
@@ -1216,7 +1269,7 @@ def telecharger_historique_paiement():
         canvas.setFont("Helvetica", 9)
         canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-        canvas.setFont("Helvetica", 14)
+        canvas.setFont("Helvetica", 12)
         y = hauteur - 110
         canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
         canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
@@ -1234,6 +1287,7 @@ def telecharger_historique_paiement():
 
 ##---------------------------------------------------------------
 @app.route('/eleves_non_en_ordre', methods=['GET', 'POST'])
+@login_required
 def eleves_non_en_ordre():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory=sqlite3.Row
@@ -1309,6 +1363,7 @@ def eleves_non_en_ordre():
 
 
 @app.route('/telecharger_non_en_ordre')
+@login_required
 def telecharger_non_en_ordre():
     filtre_matricule = request.args.get('filtre_matricule', '').strip()
     filtre_classe = request.args.get('filtre_classe', '')
@@ -1409,7 +1464,7 @@ def telecharger_non_en_ordre():
         canvas.setFont("Helvetica", 9)
         canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-        canvas.setFont("Helvetica", 14)
+        canvas.setFont("Helvetica", 12)
         y = hauteur - 110
         canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
         canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
@@ -1422,6 +1477,7 @@ def telecharger_non_en_ordre():
     return send_file(filepath, as_attachment=False)
 
 @app.route('/recu_finalisation/<matricule>/<mois>')
+@login_required
 def recu_finalisation(matricule, mois):
     filename = f"recu_finalisation_{matricule}_{mois}.pdf"
     folder = "reçus_minerval"
@@ -1433,6 +1489,7 @@ def recu_finalisation(matricule, mois):
         return "Reçu introuvable", 404
 
 @app.route('/finaliser_paiement/<matricule>/<mois>', methods=['GET', 'POST'])
+@login_required
 def finaliser_paiement(matricule, mois):
 
     conn = sqlite3.connect('ecole.db')
@@ -1515,10 +1572,10 @@ def finaliser_paiement(matricule, mois):
             observation,
             paiement['annee_scolaire']
             ))
-
+        log_action("Finalisation Paiement enregistré", session['nom_utilisateur'])
         conn.commit()
         montant_restant = montant_a_payer - (montant_paye_total + montant_complement)
-        message = f"Bonjour, nous confirmons la finalisation du paiement de {montant_complement}$ pour le mois de {mois} concernant l'élève {paiement['nom']} {paiement['postnom']} {paiement['prenom']} ({matricule}). Le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
+        message = f"C.S.Immaculée Conception de la Charité : Bonjour, nous confirmons la finalisation du paiement de {montant_complement}$ pour le mois de {mois} concernant l'élève {paiement['nom']} {paiement['postnom']} {paiement['prenom']} ({matricule}). Le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
         cursor.execute("SELECT telephone_responsable FROM eleves WHERE matricule = ?", (matricule,))
         tel_row = cursor.fetchone()
         if tel_row:
@@ -1602,6 +1659,7 @@ def finaliser_paiement(matricule, mois):
 
 
 @app.route('/eleves_en_ordre', methods=['GET', 'POST'])
+@login_required
 def eleves_en_ordre():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory = sqlite3.Row
@@ -1784,7 +1842,7 @@ def telecharger_eleves_en_ordre():
         canvas.setFont("Helvetica", 9)
         canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
-        canvas.setFont("Helvetica", 14)
+        canvas.setFont("Helvetica", 12)
         y = hauteur - 110
         canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
         canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
@@ -1801,6 +1859,7 @@ def telecharger_eleves_en_ordre():
     return send_file(filepath, as_attachment=False)
 
 @app.route('/eleves_sans_paiement', methods=['GET', 'POST'])
+@login_required
 def eleves_sans_paiement():
     filtre_matricule = ''
     filtre_classe = ''
@@ -1850,6 +1909,7 @@ def eleves_sans_paiement():
                            mois_disponibles=mois_disponibles)
 
 @app.route('/telecharger_sans_paiement')
+@login_required
 def telecharger_sans_paiement():
     filtre_matricule = request.args.get('filtre_matricule', '').strip()
     filtre_classe = request.args.get('filtre_classe', '')
@@ -1944,7 +2004,7 @@ def telecharger_sans_paiement():
         canvas.setFont("Helvetica-Bold", 13)
         canvas.drawCentredString(largeur / 2, hauteur - 60, "ÉLÈVES SANS PAIEMENT")
 
-        canvas.setFont("Helvetica", 14)
+        canvas.setFont("Helvetica", 12)
         canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
         canvas.drawString(30, hauteur - 100, f"Classe : {filtre_classe or '---'}")
         canvas.drawString(200, hauteur - 100, f"Mois : {filtre_mois or '---'}")
@@ -1958,6 +2018,7 @@ def telecharger_sans_paiement():
     return send_file(filepath, as_attachment=False)
 
 @app.route('/statistiques_paiements', methods=['GET'])
+@login_required
 def statistiques_paiements():
     mois = request.args.get('mois', '')
     classe = request.args.get('classe', '')
@@ -2035,6 +2096,7 @@ def statistiques_paiements():
     )
 
 @app.route('/telecharger_statistiques_paiements')
+@login_required
 def telecharger_statistiques_paiements():
     mois = request.args.get('mois', '')
     classe = request.args.get('classe', '')
@@ -2174,6 +2236,7 @@ def telecharger_statistiques_paiements():
     return send_file(filepath, as_attachment=False)
 
 @app.route('/rapport_global_paiements', methods=['GET'])
+@login_required
 def rapport_global_paiements():
     mois = request.args.get('mois', '')
     classe = request.args.get('classe', '')
@@ -2274,6 +2337,7 @@ def rapport_global_paiements():
 
 
 @app.route('/telecharger_rapport_global_paiements')
+@login_required
 def telecharger_rapport_global_paiements():
     mois = request.args.get('mois', '')
     classe = request.args.get('classe', '')
@@ -2399,11 +2463,14 @@ def telecharger_rapport_global_paiements():
     return send_file(filepath, as_attachment=False)
 
 @app.route('/menu_frais_et_stock')
+@login_required
 def menu_frais_et_stock():
+    log_action("Acces menu_frais_et_stock enregistré", session['nom_utilisateur'])
     return render_template('menu_frais_et_stock.html')
 
 
 @app.route('/enregistrer_frais_etat', methods=['GET', 'POST'])
+@login_required
 def enregistrer_frais_etat():
     role = session.get('role_utilisateur', '')
 
@@ -2440,7 +2507,7 @@ def enregistrer_frais_etat():
                 INSERT INTO frais_etat (matricule, tranche, montant, date_paiement, caissier)
                 VALUES (?, ?, ?, ?, ?)
             """, (matricule, tranche, montant, date_paiement, caissier))
-
+            log_action("Paiement frais de l'etat enregistré", session['nom_utilisateur'])
             conn.commit()
             dernier_id = cursor.lastrowid  # ✅ Récupère l’ID de l’enregistrement
 
@@ -2454,6 +2521,7 @@ def enregistrer_frais_etat():
 
 
 @app.route('/recu_frais_etat/<int:id>')
+@login_required
 def recu_frais_etat(id):
     try:
         conn = sqlite3.connect('ecole.db')
@@ -2538,11 +2606,13 @@ def recu_frais_etat(id):
         return "Une erreur s’est produite lors de la génération du reçu.", 500
 
 @app.route('/afficher_recu_frais_etat/<int:id>')
+@login_required
 def afficher_recu_frais_etat(id):
     url_pdf = url_for('recu_frais_etat', id=id)
     return render_template('imprimer_pdf.html', url_pdf=url_pdf)
 
 @app.route('/liste_frais_etat')
+@login_required
 def liste_frais_etat():
     matricule = request.args.get('matricule', '').strip()
     classe = request.args.get('classe', '').strip()
@@ -2624,6 +2694,7 @@ def liste_frais_etat():
                            sections=sections)
 
 @app.route('/exporter_frais_etat_pdf')
+@login_required
 def exporter_frais_etat_pdf():
     matricule = request.args.get('matricule', '').strip()
     classe = request.args.get('classe', '').strip()
@@ -2767,6 +2838,7 @@ def exporter_frais_etat_pdf():
     return send_file(filepath, as_attachment=False, download_name=filename)
 
 @app.route('/ajouter_achat_article', methods=['GET', 'POST'])
+@login_required
 def ajouter_achat_article():
     
     if request.method == 'POST':
@@ -2795,7 +2867,7 @@ def ajouter_achat_article():
             INSERT INTO achats_articles (matricule, code_article, quantite, prix_unitaire, total, date_achat, caissier)
             VALUES (?, ?, ?, ?, ?, ?, ?)
         """, (matricule, code_article, quantite, prix_unitaire, total, date_achat, caissier))
-
+        log_action("Vente Articles enregistré", session['nom_utilisateur'])
         conn.commit()
         flash("Achat enregistré avec succès !", "success")
 
@@ -2820,6 +2892,7 @@ def ajouter_achat_article():
 
 
 @app.route('/historique_achats', methods=['GET'])
+@login_required
 def historique_achats():
     # Récupérer filtres depuis l'URL (GET)
     filtre_matricule = request.args.get('matricule', '').strip()
@@ -2881,6 +2954,7 @@ def historique_achats():
                            filtre_article=filtre_article)
 
 @app.route('/exporter_historique_achats_pdf')
+@login_required
 def exporter_historique_achats_pdf():
     filtre_matricule = request.args.get('matricule', '').strip()
     filtre_section = request.args.get('section', '').strip()
@@ -3023,15 +3097,18 @@ def exporter_historique_achats_pdf():
 
 
 @app.route('/parametres')
+@login_required
 def parametres():
     role_utilisateur = session.get('role_utilisateur', '').lower()
 
     if role_utilisateur != 'full':
+        log_action("Acces parametres enregistré", session['nom_utilisateur'])
         return redirect(url_for('menu'))
 
     return render_template("parametres.html")
 
 @app.route('/ajouter_article', methods=['GET', 'POST'])
+@login_required
 def ajouter_article():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory = sqlite3.Row
@@ -3045,7 +3122,7 @@ def ajouter_article():
         # Enregistrement dans la base
         cursor.execute("INSERT INTO articles (code, nom, prix) VALUES (?, ?, ?)", (code, nom, prix))
         conn.commit()
-
+        log_action("Ajout article  enregistré", session['nom_utilisateur'])
     # Récupérer tous les articles pour affichage
     cursor.execute("SELECT * FROM articles ORDER BY id DESC")
     articles = cursor.fetchall()
@@ -3054,15 +3131,18 @@ def ajouter_article():
     return render_template("ajouter_article.html", articles=articles)
 
 @app.route('/supprimer_article/<int:article_id>')
+@login_required
 def supprimer_article(article_id):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM articles WHERE id = ?", (article_id,))
+    log_action("suppression article enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
     return redirect(url_for('ajouter_article'))
 
 @app.route('/parametres/classes', methods=['GET', 'POST'])
+@login_required
 def gerer_classes():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory = sqlite3.Row
@@ -3089,6 +3169,7 @@ def gerer_classes():
         LEFT JOIN sections s ON c.section_id = s.id
         ORDER BY c.nom
     """)
+    log_action("Ajout classe  enregistré", session['nom_utilisateur'])
     classes = cursor.fetchall()
     conn.close()
 
@@ -3096,15 +3177,18 @@ def gerer_classes():
 
 
 @app.route('/parametres/classes/supprimer/<int:classe_id>')
+@login_required
 def supprimer_classe(classe_id):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM classes WHERE id = ?", (classe_id,))
+    log_action("Suppression classe  enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
     return redirect(url_for('gerer_classes'))
 
 @app.route('/utilisateurs', methods=['GET', 'POST'])
+@login_required
 def utilisateurs():
     conn = sqlite3.connect('ecole.db')
     conn.row_factory = sqlite3.Row
@@ -3121,6 +3205,7 @@ def utilisateurs():
             INSERT INTO utilisateurs (nom, prenom, mot_de_passe, role)
             VALUES (?, ?, ?, ?)
         """, (nom, prenom, mot_de_passe, role))
+        log_action("Ajout utilisateur  enregistré", session['nom_utilisateur'])
         conn.commit()
 
     cursor.execute("SELECT * FROM utilisateurs ORDER BY nom")
@@ -3129,19 +3214,19 @@ def utilisateurs():
     return render_template("utilisateurs.html", utilisateurs=utilisateurs)
 
 @app.route('/supprimer_utilisateur/<int:id>')
+@login_required
 def supprimer_utilisateur(id):
     conn = sqlite3.connect('ecole.db')
     cursor = conn.cursor()
     cursor.execute("DELETE FROM utilisateurs WHERE id = ?", (id,))
+    log_action("Suppression utilisateur  enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
     return redirect(url_for('utilisateurs'))
 
 
-from urllib.parse import unquote
-from flask import request, render_template
-
 @app.route('/imprimer_pdf')
+@login_required
 def imprimer_pdf():
     url_pdf = request.args.get('url')
     if not url_pdf:
@@ -3149,6 +3234,8 @@ def imprimer_pdf():
 
     url_pdf = unquote(url_pdf)  # pour décoder l'URL si elle est encodée
     return render_template('imprimer_pdf.html', url_pdf=url_pdf)
+
+
 
 #Point d'entree principal
 if __name__ == '__main__':

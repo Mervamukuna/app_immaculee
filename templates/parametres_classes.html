@@ -8,7 +8,7 @@
 <style>
 
         body {
-            background-color: #002b55;
+            background-color: #114199;
         }
 
         .table thead th {
@@ -38,16 +38,16 @@
 <div class="sticky-form">
 <div class="container bg-white p-4 rounded shadow">
 
-    <h3 class="mb-4 text-primary text-center" style="color: #002b55 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-journal-text" ></i> Gestion des Classes</h3>
+    <h3 class="mb-4 text-primary text-center" style="color: #114199 !important; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-journal-text" ></i> Gestion des Classes</h3>
 
     <!-- Formulaire ajout classe -->
     <form method="POST" action="{{ url_for('gerer_classes') }}" class="row g-3 mb-4">
         <div class="col-md-6">
-            <label for="nom_classe" class="form-label" style="font-weight:bold; color: #002b55;"><i class="bi bi-pencil-square"></i> Nom de la classe :</label>
+            <label for="nom_classe" class="form-label" style="font-weight:bold; color: #114199;"><i class="bi bi-pencil-square"></i> Nom de la classe :</label>
             <input type="text" name="nom_classe" id="nom_classe" class="form-control" required placeholder="Ex : 1ère Maternelle A" />
         </div>
         <div class="col-md-4">
-            <label for="section_id" class="form-label" style="font-weight:bold; color: #002b55;"><i class="bi bi-box-seam" ></i> Section :</label>
+            <label for="section_id" class="form-label" style="font-weight:bold; color: #114199;"><i class="bi bi-box-seam" ></i> Section :</label>
             <select name="section_id" id="section_id" class="form-select" required>
                 <option value="">-- Choisir la section --</option>
                 {% for section in sections %}
@@ -56,8 +56,8 @@
             </select>
         </div>
         <div class="col-md-2 d-grid align-items-end">
-            <button type="submit" class="btn btn-primary" style="background-color:#002b55; font-weight: bold;"><i class="bi bi-plus-circle"></i> Ajouter</button>
-            <a href="{{ url_for('parametres') }}" class="btn btn-outline-secondary mt-3" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; ">
+            <button type="submit" class="btn btn-primary" style="background-color:#114199; font-weight: bold;"><i class="bi bi-plus-circle"></i> Ajouter</button>
+            <a href="{{ url_for('parametres') }}" class="btn btn-outline-secondary mt-3" style="background-color: #a10505; color: white; font-weight: bold; ">
                 <i class="bi bi-arrow-left"></i> Retour au menu
             </a>
         </div>

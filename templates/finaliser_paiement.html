@@ -8,7 +8,7 @@
 </head>
 <style>
     .btn-secondary {
-            background-color: rgb(141, 106, 9);
+            background-color: #a10505;
             color: white;
             font-weight: bold;
             border-radius: 5px;
@@ -17,7 +17,7 @@
             text-decoration: none;
         }
     .btn-secondary:hover{
-      background-color: rgb(141, 106, 9);
+      background-color: #a10505;
     }
 </style>
 <body class="bg-light p-4" style="background-color: #fff !important;">
@@ -33,7 +33,7 @@
         {% endfor %}
       {% endif %}
     {% endwith %}
-    <h2 class="text-center mb-4 text-primary" style="font-weight: bold; font-family: serif; font-size: 40px; color: #002b55 !important;">
+    <h2 class="text-center mb-4 text-primary" style="font-weight: bold; font-family: serif; font-size: 40px; color: #114199 !important;">
         <i class="fa-solid fa-cash-register me-2"></i>Finaliser le paiement
     </h2>
 
@@ -73,7 +73,7 @@
 
 
         <div class="col-md-12 text-end">
-            <button type="submit" class="btn btn-success rounded-pill" style="background-color: #065f0b; color: white; font-weight: bold;">
+            <button type="submit" class="btn btn-success rounded-pill" style="background-color: #114199; color: white; font-weight: bold;">
                 <i class="fa-solid fa-check me-1"></i>Finaliser le paiement
             </button>
             <a href="{{ url_for('eleves_non_en_ordre') }}" class="btn btn-secondary rounded-pill ms-2">

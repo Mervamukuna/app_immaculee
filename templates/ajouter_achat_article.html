@@ -9,16 +9,16 @@
 <style>
     label {
             font-weight: bold;
-            color: #002b55;
+            color: #114199;
         }
         body {
-            background-color: #002b55 !important;
+            background-color: #114199 !important;
         }
 </style>
-<body class="bg-light" style="background-color:#002b55 !important;">
+<body class="bg-light" style="background-color:#114199 !important;">
 
 <div class="container mt-4 p-4 bg-white shadow rounded">
-    <h4 style="color: #002b55; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-cart-plus"></i> Enregistrement d'une vente d’article</h4>
+    <h4 style="color: #114199; font-weight: bold; font-size: 40px; font-family: serif;"><i class="bi bi-cart-plus"></i> Enregistrement d'une vente d’article</h4>
     {% with messages = get_flashed_messages(with_categories=true) %}
       {% if messages %}
         {% for category, message in messages %}
@@ -105,8 +105,8 @@
         </div>
 
         <div class="col-12">
-            <button type="submit" class="btn btn-success" style="background-color: #065f0b; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
-            <a href="{{ url_for('menu_frais_et_stock') }}" class="btn btn-secondary" style="background-color: rgb(141, 106, 9); color: white; font-weight: bold; "><i class="bi bi-arrow-left"></i> Retour</a>
+            <button type="submit" class="btn btn-success" style="background-color: #114199; color: white; font-weight: bold;"><i class="bi bi-save"></i> Enregistrer</button>
+            <a href="{{ url_for('menu_frais_et_stock') }}" class="btn btn-secondary" style="background-color: #a10505; color: white; font-weight: bold; "><i class="bi bi-arrow-left"></i> Retour</a>
         </div>
     </form>
 </div>
