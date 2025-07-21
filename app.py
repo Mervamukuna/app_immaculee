@@ -1648,7 +1648,6 @@ def finaliser_paiement(matricule, mois):
         return redirect(url_for('imprimer_pdf') + '?url=' + url_pdf)
 
 
-
     conn.close()
     return render_template("finaliser_paiement.html",
                            paiement=paiement,
@@ -1723,6 +1722,7 @@ def eleves_en_ordre():
                            mois_disponibles=mois_disponibles)
 
 @app.route('/telecharger_eleves_en_ordre')
+@login_required
 def telecharger_eleves_en_ordre():
     # Récupération des filtres
     filtre_matricule = request.args.get('filtre_matricule', '').strip()
@@ -2038,6 +2038,7 @@ def statistiques_paiements():
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_ayant_paye,
             COALESCE(SUM(p.montant_paye), 0) AS total_paye,
+            t.montant AS tarif_minerval,
             COALESCE(t.montant * COUNT(DISTINCT e.matricule), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
@@ -2062,9 +2063,24 @@ def statistiques_paiements():
 
     statistiques = cursor.execute(query, params).fetchall()
 
+    nb_mois_par_annee = 8  # nombre de mois de Septembre à Avril
+    total_attendu_global = 0
+
+    for stat in statistiques:
+        montant_tarif = stat["tarif_minerval"] or 0
+        nb_eleves = stat["nb_eleves"] or 0
+
+        if mois == '' and annee_scolaire != '':
+            # Si on filtre par année scolaire (sans mois), on multiplie par le nombre de mois
+            total_attendu_global += montant_tarif * nb_eleves * nb_mois_par_annee
+        else:
+            # Sinon montant attendu simple (par mois)
+            total_attendu_global += montant_tarif * nb_eleves
+
+
     # Total global
     total_paye_global = sum(float(r["total_paye"]) for r in statistiques)
-    total_attendu_global = sum(float(r["total_attendu"]) for r in statistiques)
+    #total_attendu_global = sum(float(r["total_attendu"]) for r in statistiques)
     ecart_global = total_attendu_global - total_paye_global
 
     # Récupérer classes et sections existants dans eleves
@@ -2314,9 +2330,16 @@ def rapport_global_paiements():
     """
     params_tarif = [classe, classe, section, section]
     total_attendu = 0
+    nb_mois_par_annee = 8  # de Septembre à Avril
+
     for ligne in cursor.execute(query_tarif, params_tarif).fetchall():
         montant_par_eleve = ligne['montant'] or 0
-        total_attendu += montant_par_eleve * ligne['total_eleves']
+        nombre_eleves = ligne['total_eleves'] or 0
+
+        if mois == '':
+            total_attendu += montant_par_eleve * nombre_eleves * nb_mois_par_annee
+        else:
+            total_attendu += montant_par_eleve * nombre_eleves
 
     conn.close()
 
@@ -3107,7 +3130,6 @@ def exporter_historique_achats_pdf():
     return send_file(filepath, as_attachment=False)
 
 
-
 @app.route('/parametres')
 @login_required
 def parametres():
@@ -3341,9 +3363,12 @@ def get_situation_frais_etat(matricule, annee_scolaire):
 
 
 @app.route('/situation_eleve', methods=['GET', 'POST'])
+@login_required
 def situation_eleve():
     situation = None
     eleve = None
+    matricule = None
+    annee_scolaire = None
 
     if request.method == 'POST':
         matricule = request.form['matricule']
