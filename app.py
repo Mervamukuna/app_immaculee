@@ -2468,15 +2468,14 @@ def menu_frais_et_stock():
     log_action("Acces menu_frais_et_stock enregistré", session['nom_utilisateur'])
     return render_template('menu_frais_et_stock.html')
 
-
 @app.route('/enregistrer_frais_etat', methods=['GET', 'POST'])
 @login_required
 def enregistrer_frais_etat():
     role = session.get('role_utilisateur', '')
 
     if role == 'lecture':
-        
         return redirect(url_for('menu_frais_et_stock'))  # Ou vers une page où il peut juste consulter
+
     message = None
     if request.method == 'POST':
         matricule = request.form['matricule']
@@ -2487,38 +2486,51 @@ def enregistrer_frais_etat():
 
         conn = sqlite3.connect('ecole.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT section FROM eleves WHERE matricule = ?", (matricule,))
-        section_row = cursor.fetchone()
-        if section_row:
-            section = section_row[0]
 
-                # 🔐 Vérification d'autorisation ici
+        # Récupérer section et annee_scolaire de l'élève
+        cursor.execute("SELECT section, annee_scolaire FROM eleves WHERE matricule = ?", (matricule,))
+        eleve_info = cursor.fetchone()
+
+        if eleve_info:
+            section = eleve_info[0]
+            annee_scolaire = eleve_info[1]
+
+            # 🔐 Vérification d'autorisation ici
             role_utilisateur = session.get('role_utilisateur', '').lower()
-            
             if role_utilisateur not in ['full', section.lower()]:
                 flash("Vous n'avez pas les droits pour effectuer cette action.", "danger")
+                conn.close()
                 return redirect(url_for('enregistrer_frais_etat'))
-        # Vérification que l'élève existe
-        cursor.execute("SELECT * FROM eleves WHERE matricule = ?", (matricule,))
-        eleve = cursor.fetchone()
-
-        if eleve:
+            # Vérifie si la même tranche a déjà été payée pour cette année scolaire
             cursor.execute("""
-                INSERT INTO frais_etat (matricule, tranche, montant, date_paiement, caissier)
-                VALUES (?, ?, ?, ?, ?)
-            """, (matricule, tranche, montant, date_paiement, caissier))
+                SELECT 1 FROM frais_etat 
+                WHERE matricule = ? AND tranche = ? AND annee_scolaire = ?
+            """, (matricule, tranche, annee_scolaire))
+
+            deja_paye = cursor.fetchone()
+            if deja_paye:
+                conn.close()
+                flash(f"⚠️ L’élève {matricule} a déjà payé la {tranche} pour l’année scolaire {annee_scolaire}", "danger")
+                return redirect(url_for("enregistrer_frais_etat"))
+
+            # Insertion avec l'année scolaire
+            cursor.execute("""
+                INSERT INTO frais_etat (matricule, tranche, montant, date_paiement, caissier, annee_scolaire)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (matricule, tranche, montant, date_paiement, caissier, annee_scolaire))
+
             log_action("Paiement frais de l'etat enregistré", session['nom_utilisateur'])
             conn.commit()
             dernier_id = cursor.lastrowid  # ✅ Récupère l’ID de l’enregistrement
 
             conn.close()
             return redirect(url_for('recu_frais_etat', id=dernier_id))  # ✅ Redirige vers le reçu PDF
+
         else:
             conn.close()
             message = f"❌ Aucun élève trouvé avec le matricule {matricule}."
 
     return render_template("enregistrer_frais_etat.html", message=message, current_date=datetime.now().strftime('%Y-%m-%d'),)
-
 
 @app.route('/recu_frais_etat/<int:id>')
 @login_required
@@ -3236,6 +3248,234 @@ def imprimer_pdf():
     return render_template('imprimer_pdf.html', url_pdf=url_pdf)
 
 
+def get_eleve_by_matricule(matricule):
+    conn = sqlite3.connect('ecole.db')
+    cur = conn.cursor()
+    cur.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = ?", (matricule,))
+    row = cur.fetchone()
+    conn.close()
+    if row:
+        return {
+            'nom': row[0],
+            'postnom': row[1],
+            'prenom': row[2],
+            'genre': row[3],
+            'section': row[4],
+            'classe': row[5]
+        }
+    return None
+
+def get_situation_minerval(matricule, annee_scolaire):
+    mois_list = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril']
+    situation = {}
+
+    conn = sqlite3.connect('ecole.db')
+    cur = conn.cursor()
+
+    # 1. Récupérer la classe de l'élève
+    cur.execute("SELECT classe FROM eleves WHERE matricule = ?", (matricule,))
+    result = cur.fetchone()
+    if not result:
+        conn.close()
+        return {mois: "Non payé" for mois in mois_list}  # Élève introuvable
+
+    classe_nom = result[0]
+
+    # 2. Trouver l'ID de la classe
+    cur.execute("SELECT id FROM classes WHERE nom = ?", (classe_nom,))
+    result = cur.fetchone()
+    if not result:
+        conn.close()
+        return {mois: "Non payé" for mois in mois_list}  # Classe introuvable
+
+    classe_id = result[0]
+
+    # 3. Récupérer le tarif du minerval pour cette classe
+    cur.execute("SELECT montant FROM tarifs WHERE classe_id = ? AND type = 'minerval'", (classe_id,))
+    result = cur.fetchone()
+    montant_a_payer = result[0] if result else 0
+
+    # 4. Boucle sur les mois
+    for mois in mois_list:
+        cur.execute("""
+            SELECT SUM(montant_paye) 
+            FROM paiements 
+            WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+        """, (matricule, mois, annee_scolaire))
+        result = cur.fetchone()
+        total_paye = result[0] or 0
+
+        # Comparaison intelligente
+        if total_paye == 0:
+            etat = "Non payé"
+        elif total_paye < montant_a_payer:
+            etat = "Paiement partiel"
+        else:
+            etat = "Payé"
+
+        situation[mois] = etat
+
+    conn.close()
+    return situation
+
+def get_situation_frais_etat(matricule, annee_scolaire):
+    situation = {"Tranche 1": "Non payé", "Tranche 2": "Non payé"}
+
+    conn = sqlite3.connect('ecole.db')
+    cur = conn.cursor()
+
+    # Récupérer toutes les lignes payées (>0) pour cet élève et année scolaire
+    cur.execute("""
+        SELECT tranche, montant FROM frais_etat
+        WHERE matricule = ? AND annee_scolaire = ? AND montant > 0
+    """, (matricule, annee_scolaire))
+
+    rows = cur.fetchall()
+
+    for tranche, montant in rows:
+        if tranche in situation:
+            situation[tranche] = "Payé"
+
+    conn.close()
+    return situation
+
+
+@app.route('/situation_eleve', methods=['GET', 'POST'])
+def situation_eleve():
+    situation = None
+    eleve = None
+
+    if request.method == 'POST':
+        matricule = request.form['matricule']
+        annee_scolaire = request.form['annee_scolaire']
+
+        # Récupération infos élève
+        eleve = get_eleve_by_matricule(matricule)
+
+        if eleve:
+            # Situation du minerval
+            situation_minerval = get_situation_minerval(matricule, annee_scolaire)
+
+            # Situation frais de l'état
+            situation_frais_etat = get_situation_frais_etat(matricule, annee_scolaire)
+
+            situation = {
+                'minerval': situation_minerval,
+                'etat': situation_frais_etat
+            }
+
+    return render_template('situation_eleve.html', eleve=eleve, situation=situation, annee_scolaire=annee_scolaire, matricule=matricule)
+
+
+@app.route('/telecharger_situation_eleve/<matricule>/<annee_scolaire>')
+@login_required
+def telecharger_situation_eleve(matricule, annee_scolaire):
+    conn = sqlite3.connect('ecole.db')
+    conn.row_factory = sqlite3.Row
+    cursor = conn.cursor()
+
+    # ✅ Récupérer les infos de l'élève
+    eleve = cursor.execute("SELECT * FROM eleves WHERE matricule = ?", (matricule,)).fetchone()
+    if not eleve:
+        return "Élève introuvable", 404
+
+    # ✅ Situation minerval
+    mois_list = ["Septembre", "Octobre", "Novembre", "Décembre", "Janvier", "Février", "Mars", "Avril", "Mai", "Juin"]
+    situation_minerval = []
+    for mois in mois_list:
+        cursor.execute("""
+            SELECT SUM(montant_paye) as total
+            FROM paiements
+            WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+        """, (matricule, mois, annee_scolaire))
+        total = cursor.fetchone()['total'] or 0
+
+        cursor.execute("""
+            SELECT montant
+            FROM tarifs
+            JOIN classes ON classes.id = tarifs.classe_id
+            WHERE classes.nom = ? AND type = 'minerval'
+        """, (eleve['classe'],))
+        tarif = cursor.fetchone()
+        montant_tarif = tarif['montant'] if tarif else 0
+
+        if total >= montant_tarif:
+            statut = "Payé"
+        elif total > 0:
+            statut = "Paiement partiel"
+        else:
+            statut = "Non payé"
+
+        situation_minerval.append([mois, statut])
+
+    # ✅ Situation frais de l'État
+    situation_etat = [["Tranche", "Statut"]]
+    for tranche in ["Tranche 1", "Tranche 2"]:
+        cursor.execute("""
+            SELECT montant FROM frais_etat
+            WHERE matricule = ? AND tranche = ? AND annee_scolaire = ?
+        """, (matricule, tranche, annee_scolaire))
+        ligne = cursor.fetchone()
+        montant = ligne['montant'] if ligne else 0
+        statut = "Payé" if montant > 0 else "Non payé"
+        situation_etat.append([tranche, statut])
+
+    conn.close()
+
+    # 📄 Génération PDF
+    dossier = "pdf_situation_eleve"
+    if not os.path.exists(dossier):
+        os.makedirs(dossier)
+    chemin = os.path.join(dossier, f"situation_{matricule}.pdf")
+
+    largeur, hauteur = landscape(A4)
+    styles = getSampleStyleSheet()
+
+    def en_tete(canvas, doc):
+        try:
+            logo1 = ImageReader("static/logo1.jpg")
+            logo2 = ImageReader("static/logo.jpg")
+            canvas.drawImage(logo1, 30, hauteur - 100, width=60, height=60)
+            canvas.drawImage(logo2, largeur - 90, hauteur - 100, width=60, height=60)
+        except:
+            pass
+
+        canvas.setFont("Helvetica-Bold", 14)
+        canvas.drawCentredString(largeur / 2, hauteur - 40, "IMMACULEE CONCEPTION DE LA CHARITE")
+        canvas.drawCentredString(largeur / 2, hauteur - 60, "SITUATION DE L'ÉLÈVE")
+        canvas.setFont("Helvetica", 12)
+        canvas.drawString(30, hauteur - 120, f"Nom : {eleve['nom']} {eleve['postnom']} {eleve['prenom']}")
+        canvas.drawString(320, hauteur - 120, f"Matricule : {matricule}")
+        canvas.drawString(30, hauteur - 140, f"Classe : {eleve['classe']} - Section : {eleve['section']}")
+        canvas.drawString(420, hauteur - 140, f"Année scolaire : {annee_scolaire}")
+        canvas.setFont("Helvetica-Oblique", 9)
+        canvas.drawRightString(largeur - 30, hauteur - 30, datetime.now().strftime('%d/%m/%Y %H:%M'))
+
+    # Tableaux
+    table_minerval = Table([["Mois", "Situation"]] + situation_minerval, colWidths=[200, 200])
+    table_minerval.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
+    ]))
+
+    table_etat = Table(situation_etat, colWidths=[200, 200])
+    table_etat.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#006400")),
+        ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTSIZE', (0, 0), (-1, -1), 10),
+        ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
+    ]))
+
+    doc = SimpleDocTemplate(chemin, pagesize=landscape(A4), topMargin=160, leftMargin=30, rightMargin=30)
+    doc.build([table_minerval, Spacer(1, 20), table_etat], onFirstPage=en_tete, onLaterPages=en_tete)
+
+    return send_file(chemin, as_attachment=False)
 
 #Point d'entree principal
 if __name__ == '__main__':
