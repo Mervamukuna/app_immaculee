@@ -2162,6 +2162,11 @@ def telecharger_statistiques_paiements():
     ]
 
     rows = cursor.execute(query, params).fetchall()
+    rows = [dict(row) for row in rows]  # convertit en dict modifiable
+    if annee_scolaire and (mois == '' or mois is None):
+        for row in rows:
+            row["total_attendu"] *= 8
+
     conn.close()
 
     # Calcul des totaux globaux
@@ -2427,6 +2432,9 @@ def telecharger_rapport_global_paiements():
     for ligne in cursor.execute(query_tarif, params_tarif).fetchall():
         montant_par_eleve = ligne['montant'] or 0
         total_attendu += montant_par_eleve * ligne['total_eleves']
+    if annee_scolaire and mois == '':
+        total_attendu *= 8
+
 
     conn.close()
 
