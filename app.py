@@ -46,21 +46,33 @@ def verifier_autorisation(section_cible):
     flash("⛔ Accès refusé : vous n'êtes pas autorisé à gérer cette section.", "danger")
     return False
 
-import pymysql
-import sys
-from flask import Flask
 import os
+from urllib.parse import urlparse
+import pymysql
+from flask import Flask
+import sys
 
-app = Flask(__name__)
-app.secret_key = 'abc123xyz' 
+app = Flask(_name_)
+app.secret_key = 'abc123xyz'
 
-# Variables de connexion (tirées de Scalingo)
-DB_HOST = "immaculee-a-4334.mysql.c.osc-fr1.scalingo-dbs.com"
-DB_PORT = 33701
-DB_USER = "immaculee_a_4334"
-DB_PASSWORD = "aiEK_PdRjw9dgANNdt1vD1jgCW5oynypO1IfS6Qes2liN2NJKOWAM0_5pInOwP68"
-DB_NAME = "immaculee_a_4334"
+# Récupérer la variable d'environnement
+db_url = os.getenv('SCALINGO_MYSQL_URL')
+if not db_url:
+    print("❌ La variable d'environnement SCALINGO_MYSQL_URL n'est pas définie.")
+    sys.exit(1)
 
+# Parser l'URL pour extraire user, password, host, port, db
+result = urlparse(db_url)
+
+DB_USER = result.username
+DB_PASSWORD = result.password
+DB_HOST = result.hostname
+DB_PORT = result.port
+DB_NAME = result.path.lstrip('/')
+
+print(f"DEBUG: Connexion à la base {DB_NAME} sur {DB_HOST}:{DB_PORT} avec user {DB_USER}")
+
+# Test initial de connexion au démarrage (facultatif, mais utile)
 try:
     conn = pymysql.connect(
         user=DB_USER,
@@ -68,13 +80,15 @@ try:
         host=DB_HOST,
         port=DB_PORT,
         database=DB_NAME,
-        ssl={"ssl": True, "ssl_verify_cert": False}  # Désactive la vérif SSL stricte
+        ssl={"ssl": True, "ssl_verify_cert": False}
     )
     print("✅ Connexion réussie à la base de données !")
+    conn.close()
 except pymysql.Error as e:
     print(f"❌ Erreur de connexion à la base de données : {e}")
     sys.exit(1)
 
+# Fonction pour obtenir une nouvelle connexion quand on en a besoin
 def get_db_connection():
     try:
         conn = pymysql.connect(
