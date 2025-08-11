@@ -52,7 +52,7 @@ import pymysql
 from flask import Flask
 import sys
 
-app = Flask(_name_)
+app = Flask(__name__)
 app.secret_key = 'abc123xyz'
 
 # Récupérer la variable d'environnement
