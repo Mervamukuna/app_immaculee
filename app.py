@@ -45,14 +45,14 @@ def verifier_autorisation(section_cible):
     # ❌ Accès refusé
     flash("⛔ Accès refusé : vous n'êtes pas autorisé à gérer cette section.", "danger")
     return False
-    
+
 import mariadb
 import sys
 from flask import Flask
 import os
 
 app = Flask(__name__)
-app.secret_key = 'abc123xyz'
+app.secret_key = 'abc123xyz' #cle
 
 # Variables de connexion (tirées de Scalingo)
 DB_HOST = "immaculee-a-4334.mysql.c.osc-fr1.scalingo-dbs.com"
