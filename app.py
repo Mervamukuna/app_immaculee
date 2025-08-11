@@ -58,7 +58,7 @@ app.secret_key = 'abc123xyz'
 DB_HOST = "immaculee-a-4334.mysql.c.osc-fr1.scalingo-dbs.com"
 DB_PORT = 33701
 DB_USER = "immaculee_a_4334"
-DB_PASSWORD = "TON_MOT_DE_PASSE"
+DB_PASSWORD = "aiEK_PdRjw9dgANNdt1vD1jgCW5oynypO1IfS6Qes2liN2NJKOWAM0_5pInOwP68"
 DB_NAME = "immaculee_a_4334"
 
 try:
