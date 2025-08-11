@@ -46,7 +46,7 @@ def verifier_autorisation(section_cible):
     flash("⛔ Accès refusé : vous n'êtes pas autorisé à gérer cette section.", "danger")
     return False
 
-import mariadb
+import pymysql
 import sys
 from flask import Flask
 import os
@@ -62,7 +62,7 @@ DB_PASSWORD = "TON_MOT_DE_PASSE"
 DB_NAME = "immaculee_a_4334"
 
 try:
-    conn = mariadb.connect(
+    conn = pymysql.connect(
         user=DB_USER,
         password=DB_PASSWORD,
         host=DB_HOST,
@@ -71,13 +71,13 @@ try:
         ssl={"ssl": True, "ssl_verify_cert": False}  # Désactive la vérif SSL stricte
     )
     print("✅ Connexion réussie à la base de données !")
-except mariadb.Error as e:
+except pymysql.Error as e:
     print(f"❌ Erreur de connexion à la base de données : {e}")
     sys.exit(1)
 
 def get_db_connection():
     try:
-        conn = mariadb.connect(
+        conn = pymysql.connect(
             host=DB_HOST,
             user=DB_USER,
             password=DB_PASSWORD,
@@ -86,7 +86,7 @@ def get_db_connection():
             ssl={"ssl": True, "ssl_verify_cert": False}
         )
         return conn
-    except mariadb.Error as e:
+    except pymysql.Error as e:
         print(f"Erreur de connexion à la base de données : {e}")
         return None
 
