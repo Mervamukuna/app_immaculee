@@ -52,7 +52,7 @@ from flask import Flask
 import os
 
 app = Flask(__name__)
-app.secret_key = 'abc123xyz' #cle
+app.secret_key = 'abc123xyz' 
 
 # Variables de connexion (tirées de Scalingo)
 DB_HOST = "immaculee-a-4334.mysql.c.osc-fr1.scalingo-dbs.com"
