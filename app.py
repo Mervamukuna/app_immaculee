@@ -45,18 +45,30 @@ def verifier_autorisation(section_cible):
     # ❌ Accès refusé
     flash("⛔ Accès refusé : vous n'êtes pas autorisé à gérer cette section.", "danger")
     return False
+    
+import mariadb
+import sys
+from flask import Flask
+import os
 
-#Creation de l'application Flask
 app = Flask(__name__)
-app.secret_key = 'abc123xyz'  # Clé secrète pour la session
+app.secret_key = 'abc123xyz'
+
+# Variables de connexion (tirées de Scalingo)
+DB_HOST = "immaculee-a-4334.mysql.c.osc-fr1.scalingo-dbs.com"
+DB_PORT = 33701
+DB_USER = "immaculee_a_4334"
+DB_PASSWORD = "TON_MOT_DE_PASSE"
+DB_NAME = "immaculee_a_4334"
 
 try:
     conn = mariadb.connect(
-        user="gestion_eleves_user",
-        password="Gestion2025.",
-        host="localhost",
-        port=3306,
-        database="gestion_eleves_db"
+        user=DB_USER,
+        password=DB_PASSWORD,
+        host=DB_HOST,
+        port=DB_PORT,
+        database=DB_NAME,
+        ssl={"ssl": True, "ssl_verify_cert": False}  # Désactive la vérif SSL stricte
     )
     print("✅ Connexion réussie à la base de données !")
 except mariadb.Error as e:
@@ -66,10 +78,12 @@ except mariadb.Error as e:
 def get_db_connection():
     try:
         conn = mariadb.connect(
-            host="localhost",
-            user="gestion_eleves_user",
-            password="Gestion2025.",
-            database="gestion_eleves_db"
+            host=DB_HOST,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            port=DB_PORT,
+            database=DB_NAME,
+            ssl={"ssl": True, "ssl_verify_cert": False}
         )
         return conn
     except mariadb.Error as e:
