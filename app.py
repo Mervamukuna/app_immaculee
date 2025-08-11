@@ -1,5 +1,6 @@
+import mariadb
+import sys
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, session, flash, send_from_directory
-import sqlite3
 from reportlab.lib.pagesizes import letter, A5, A6, landscape, A4
 from reportlab.pdfgen import canvas
 from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer, Image
@@ -16,11 +17,10 @@ from io import BytesIO
 from functools import wraps
 from flask import make_response
 from werkzeug.security import check_password_hash, generate_password_hash
-from flask import Flask, render_template, request, redirect, url_for, session, flash
-import sqlite3
 from sms_sender import envoyer_sms
 from urllib.parse import unquote
 from flask import request, render_template
+import bcrypt
 
 
 def verifier_autorisation(section_cible):
@@ -50,8 +50,31 @@ def verifier_autorisation(section_cible):
 app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
-from functools import wraps
-from flask import session, redirect, url_for, flash
+try:
+    conn = mariadb.connect(
+        user="gestion_eleves_user",
+        password="Gestion2025.",
+        host="localhost",
+        port=3306,
+        database="gestion_eleves_db"
+    )
+    print("✅ Connexion réussie à la base de données !")
+except mariadb.Error as e:
+    print(f"❌ Erreur de connexion à la base de données : {e}")
+    sys.exit(1)
+
+def get_db_connection():
+    try:
+        conn = mariadb.connect(
+            host="localhost",
+            user="gestion_eleves_user",
+            password="Gestion2025.",
+            database="gestion_eleves_db"
+        )
+        return conn
+    except mariadb.Error as e:
+        print(f"Erreur de connexion à la base de données : {e}")
+        return None
 
 def login_required(f):
     @wraps(f)
@@ -78,37 +101,38 @@ def racine():
 def accueil():
     return render_template('index.html')
 
+
+from werkzeug.security import check_password_hash
+
 @app.route('/connexion', methods=['GET', 'POST'])
 def connexion():
     if request.method == 'POST':
         nom = request.form['nom']
         mot_de_passe = request.form['mot_de_passe']
 
-        conn = sqlite3.connect('ecole.db')
+        conn = get_db_connection()
         cursor = conn.cursor()
-
         cursor.execute("""
-            SELECT id, nom, prenom, role
+            SELECT id, nom, prenom, mot_de_passe, role
             FROM utilisateurs
-            WHERE nom = ? AND mot_de_passe = ?
-        """, (nom, mot_de_passe))
-
+            WHERE nom = %s
+        """, (nom,))
         utilisateur = cursor.fetchone()
         conn.close()
 
-        if utilisateur:
+        if utilisateur and check_password_hash(utilisateur[3], mot_de_passe):
             session['connecte'] = True
             session['user_id'] = utilisateur[0]
             session['nom_utilisateur'] = f"{utilisateur[1]} {utilisateur[2]}"
-            session['role_utilisateur'] = utilisateur[3]
+            session['role_utilisateur'] = utilisateur[4]
             log_action("Connexion réussie", session['nom_utilisateur'])
             return redirect(url_for('accueil'))
-
         else:
             flash("Identifiants incorrects", "danger")
             return redirect(url_for('connexion'))
 
     return render_template('connexion.html')
+
 
 @app.route('/deconnexion')
 def deconnexion():
@@ -134,7 +158,9 @@ def changer_mot_de_passe():
         return redirect(url_for('connexion'))
 
     nom_utilisateur = session['nom_utilisateur']
-    nom, prenom = nom_utilisateur.split()
+    parts = nom_utilisateur.split()
+    nom = parts[0]
+    prenom = " ".join(parts[1:])  # Gère prénoms composés
 
     if request.method == 'POST':
         ancien = request.form['ancien']
@@ -145,31 +171,41 @@ def changer_mot_de_passe():
             flash("Les mots de passe ne correspondent pas", "danger")
             return redirect(url_for('changer_mot_de_passe'))
 
-        conn = sqlite3.connect('ecole.db')
-        cursor = conn.cursor()
+        try:
+            conn = get_db_connection()
+            cursor = conn.cursor()
 
-        cursor.execute("""
-            SELECT * FROM utilisateurs 
-            WHERE nom = ? AND prenom = ? AND mot_de_passe = ?
-        """, (nom, prenom, ancien))
-        utilisateur = cursor.fetchone()
-
-        if utilisateur:
             cursor.execute("""
-                UPDATE utilisateurs SET mot_de_passe = ? 
-                WHERE nom = ? AND prenom = ?
-            """, (nouveau, nom, prenom))
-            conn.commit()
-            conn.close()
+                SELECT mot_de_passe FROM utilisateurs 
+                WHERE nom = %s AND prenom = %s
+            """, (nom, prenom))
+            utilisateur = cursor.fetchone()
 
-            flash("Mot de passe mis à jour avec succès", "success")
-            log_action("Changement de mot de passe", session['nom_utilisateur'])
-            return redirect(url_for('menu'))
-        else:
-            conn.close()
-            flash("Ancien mot de passe incorrect", "danger")
-            log_action("Changement mot de passe echoué", session['nom_utilisateur'])
+            if utilisateur and check_password_hash(utilisateur[0], ancien):
+                nouveau_hache = generate_password_hash(nouveau)
+                cursor.execute("""
+                    UPDATE utilisateurs SET mot_de_passe = %s 
+                    WHERE nom = %s AND prenom = %s
+                """, (nouveau_hache, nom, prenom))
+                conn.commit()
+
+                flash("Mot de passe mis à jour avec succès", "success")
+                log_action("Changement de mot de passe", session['nom_utilisateur'])
+                return redirect(url_for('menu'))
+            else:
+                flash("Ancien mot de passe incorrect", "danger")
+                log_action("Changement mot de passe échoué", session['nom_utilisateur'])
+                return redirect(url_for('changer_mot_de_passe'))
+
+        except mariadb.Error as e:
+            flash("Erreur lors de la mise à jour du mot de passe", "danger")
+            print(f"Erreur MariaDB : {e}")
+            log_action("Erreur SQL - mot de passe", session['nom_utilisateur'])
             return redirect(url_for('changer_mot_de_passe'))
+
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
     return render_template('changer_mot_de_passe.html')
 
@@ -179,7 +215,7 @@ def changer_mot_de_passe():
 @login_required
 def menu():
 
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
         # Total frais Maternelle
     cursor.execute("""
@@ -276,7 +312,7 @@ def inscription():
 
     if request.method == 'POST':
         try:
-            conn = sqlite3.connect('ecole.db')
+            conn = get_db_connection()
             cursor = conn.cursor()
 
             # 1. Récupération des données du formulaire
@@ -325,7 +361,7 @@ def inscription():
                     fonction_responsable, statut_eleve, frais_inscription, ram_papier,
                     frais_bulletin, deux_savons, deux_ph, fournitures
                 )
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 nom, postnom, prenom, genre, section, classe,
                 annee_scolaire, date_inscription, lieu_naissance, date_naissance,
@@ -340,7 +376,8 @@ def inscription():
             eleve_id = cursor.lastrowid
             annee_fin = annee_scolaire.split('-')[1] if '-' in annee_scolaire else annee_scolaire
             matricule = f"{nom[0].upper()}{postnom[0].upper()}{prenom[0].upper()}-{eleve_id}-{annee_fin}"
-            cursor.execute("UPDATE eleves SET matricule = ? WHERE id = ?", (matricule, eleve_id))
+            cursor.execute("UPDATE eleves SET matricule = %s WHERE id = %s", (matricule, eleve_id))
+            print("Matricule généré :", matricule)
 
             conn.commit()
             # Message de bienvenue
@@ -439,14 +476,14 @@ def telecharger_recu_pdf(matricule):
 @app.route('/get_classes/<section>')
 @login_required
 def get_classes(section):
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     cursor.execute("""
         SELECT classes.nom
         FROM classes
         JOIN sections ON classes.section_id = sections.id
-        WHERE sections.nom = ?
+        WHERE sections.nom = %s
     """, (section,))
 
     resultats = cursor.fetchall()
@@ -457,35 +494,37 @@ def get_classes(section):
 @app.route('/get_frais/<nom_classe>/<statut>')
 @login_required
 def get_frais(nom_classe, statut):
-    conn = sqlite3.connect('ecole.db')
-    cursor = conn.cursor()
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
 
-    # 🔹 Trouver l'ID de la classe
-    cursor.execute("SELECT id FROM classes WHERE nom = ?", (nom_classe,))
-    result = cursor.fetchone()
-    if not result:
-        conn.close()
+        cursor.execute("SELECT id FROM classes WHERE nom = %s", (nom_classe,))
+        result = cursor.fetchone()
+        if not result:
+            return jsonify({'frais': 0})
+
+        classe_id = result[0]
+
+        cursor.execute("""
+            SELECT montant FROM tarifs 
+            WHERE classe_id = %s AND type = 'inscription' AND statut_eleve = %s
+        """, (classe_id, statut.lower()))
+
+        montant = cursor.fetchone()
+        return jsonify({'frais': montant[0] if montant else 0})
+    except mariadb.Error as e:
+        print(f"Erreur MariaDB: {e}")
         return jsonify({'frais': 0})
-
-    classe_id = result[0]
-
-    # 🔹 Chercher le montant dans la table tarifs
-    cursor.execute("""
-        SELECT montant FROM tarifs 
-        WHERE classe_id = ? AND type = 'inscription' AND statut_eleve = ?
-    """, (classe_id, statut.lower()))
-
-    montant = cursor.fetchone()
-    conn.close()
-
-    return jsonify({'frais': montant[0] if montant else 0})
+    finally:
+        if 'conn' in locals():
+            conn.close()
 
 
 @app.route('/liste', methods=['GET', 'POST'])
 @login_required
 def liste_eleves():
    
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
 
     # 🔹 Récupérer toutes les classes distinctes depuis la base de données
@@ -499,14 +538,14 @@ def liste_eleves():
     if classe and recherche:
         cursor.execute("""
             SELECT * FROM eleves 
-            WHERE classe = ? AND (nom LIKE ? OR postnom LIKE ? OR prenom LIKE ?)
+            WHERE classe = %s AND (nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s)
         """, (classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'))
     elif classe:
-        cursor.execute("SELECT * FROM eleves WHERE classe = ?", (classe,))
+        cursor.execute("SELECT * FROM eleves WHERE classe = %s", (classe,))
     elif recherche:
         cursor.execute("""
             SELECT * FROM eleves 
-            WHERE nom LIKE ? OR postnom LIKE ? OR prenom LIKE ?
+            WHERE nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s
         """, (f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'))
     else:
         cursor.execute("SELECT * FROM eleves")
@@ -520,12 +559,12 @@ def liste_eleves():
 @login_required
 def telecharger_pdf(classe):
     
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     curseur = conn.cursor()
     curseur.execute("""
         SELECT matricule, nom, postnom, prenom, genre, classe, ecole_provenance, responsable, telephone_responsable, adresse 
         FROM eleves 
-        WHERE classe = ? 
+        WHERE classe = %s 
         ORDER BY nom ASC, postnom ASC, prenom ASC
     """, (classe,))
 
@@ -593,7 +632,7 @@ def telecharger_pdf(classe):
             Paragraph(e[9] or "-", style_normal)
     ])
 
-    table = Table(data, colWidths=[65, 110, 50, 70, 60, 70, 70, 70])
+    table = Table(data, colWidths=[65, 90, 50, 70, 60, 70, 70, 70])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -627,10 +666,10 @@ def modifier_eleve(id):
     if role == 'lecture':
         flash("Vous n'avez pas les droits pour effectuer cette action.", "danger")
         return redirect(url_for('liste_eleves'))  # Ou vers une page où il peut juste consulter
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     # Récupérer l'élève
-    cursor.execute("SELECT section FROM eleves WHERE id = ?", (id,))
+    cursor.execute("SELECT section FROM eleves WHERE id = %s", (id,))
     resultat = cursor.fetchone()
 
     if not resultat:
@@ -670,11 +709,11 @@ def modifier_eleve(id):
 
         cursor.execute('''
             UPDATE eleves SET 
-                nom = ?, postnom = ?, prenom = ?, genre = ?, section = ?, classe = ?, annee_scolaire = ?, 
-                lieu_naissance = ?, date_naissance = ?, ecole_provenance = ?, classe_precedente = ?,
-                responsable = ?, telephone_responsable = ?, fonction_responsable = ?, statut_eleve = ?, frais_inscription = ?, 
-                frais_bulletin = ?, ram_papier = ?, deux_savons = ?, deux_ph = ?, fournitures = ?
-            WHERE id = ?
+                nom = %s, postnom = %s, prenom = %s, genre = %s, section = %s, classe = %s, annee_scolaire = %s, 
+                lieu_naissance = %s, date_naissance = %s, ecole_provenance = %s, classe_precedente = %s,
+                responsable = %s, telephone_responsable = %s, fonction_responsable = %s, statut_eleve = %s, frais_inscription = %s, 
+                frais_bulletin = %s, ram_papier = %s, deux_savons = %s, deux_ph = %s, fournitures = %s
+            WHERE id = %s
         ''', (
             nom, postnom, prenom, genre, section, classe, annee_scolaire,
             lieu_naissance, date_naissance, ecole_provenance, classe_precedente,
@@ -688,7 +727,7 @@ def modifier_eleve(id):
         return redirect(url_for('liste_eleves'))
 
     # Pré-remplissage du formulaire
-    cursor.execute("SELECT * FROM eleves WHERE id = ?", (id,))
+    cursor.execute("SELECT * FROM eleves WHERE id = %s", (id,))
     eleve = cursor.fetchone()
     conn.close()
 
@@ -700,17 +739,18 @@ def modifier_eleve(id):
 @app.route('/supprimer/<int:id>', methods=['GET'])
 @login_required
 def supprimer_eleve(id):
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     # Récupération de la section de l'élève
-    cursor.execute("SELECT section FROM eleves WHERE id = ?", (id,))
+    cursor.execute("SELECT section FROM eleves WHERE id = %s", (id,))
     result = cursor.fetchone()
 
     role_utilisateur = session.get('role_utilisateur', '').lower()
 
     if role_utilisateur != 'full':
+        flash("Vous n'avez pas l'autorisation de supprimer cet élève.", "danger")
         return redirect(url_for('liste_eleves'))
-    cursor.execute("DELETE FROM eleves WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM eleves WHERE id = %s", (id,))
     conn.commit()
     conn.close()
 
@@ -725,19 +765,19 @@ def gestion_minerval():
     return render_template("gestion_minerval.html")
 
 
-# 📌 Route : Paiement
 @app.route('/paiement', methods=['GET', 'POST'])
 @login_required
 def paiement():
     role = session.get('role_utilisateur', '')
     if role == 'lecture':
-        return redirect(url_for('gestion_minerval'))  # Ou vers une page où il peut juste consulter
+        return redirect(url_for('gestion_minerval'))
+    
     if request.method == 'POST':
         try:
-            conn = sqlite3.connect('ecole.db')
+            conn = get_db_connection()
             cursor = conn.cursor()
 
-            # 1. Récupération des données du formulaire
+            # Récupération données formulaire
             matricule = request.form['matricule']
             mois = request.form['mois']
             date_paiement = request.form['date_paiement']
@@ -746,33 +786,27 @@ def paiement():
             mode_paiement = request.form.get('mode_paiement', 'Non spécifié')
             observation = request.form.get('observation', 'Aucun')
             mois_annee = ["Septembre", "Octobre", "Novembre", "Décembre",
-              "Janvier", "Février", "Mars", "Avril"]
+                          "Janvier", "Février", "Mars", "Avril"]
 
+            # Vérifier paiement mois précédent
             if mois in mois_annee:
                 index_mois = mois_annee.index(mois)
                 if index_mois > 0:
                     mois_precedent = mois_annee[index_mois - 1]
-
-                    # Vérification si le mois précédent a été payé en ordre
                     cursor.execute("""
-                        SELECT 
-                            SUM(montant_paye), MAX(montant_a_payer) 
+                        SELECT SUM(montant_paye), MAX(montant_a_payer) 
                         FROM paiements 
-                        WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+                        WHERE matricule = %s AND mois = %s AND annee_scolaire = %s
                     """, (matricule, mois_precedent, annee_scolaire))
-
                     paiement_precedent = cursor.fetchone()
-
-                    if not paiement_precedent or paiement_precedent[0] is None or paiement_precedent[0] < paiement_precedent[1]:
+                    if (not paiement_precedent or paiement_precedent[0] is None or 
+                        paiement_precedent[0] < paiement_precedent[1]):
                         flash(f"⛔ Paiement refusé : Le mois précédent ({mois_precedent}) n’a pas encore été réglé entièrement.", "danger")
                         return redirect(url_for('paiement'))
 
-
-
-            # 2. Récupération des infos de l'élève
-            cursor.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = ?", (matricule,))
+            # Infos élève
+            cursor.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = %s", (matricule,))
             eleve = cursor.fetchone()
-
             if not eleve:
                 flash("Élève introuvable.", "danger")
                 return redirect(url_for('paiement'))
@@ -780,103 +814,98 @@ def paiement():
             nom, postnom, prenom, genre, section, nom_classe = eleve
             nom_complet = f"{nom} {postnom} {prenom}"
 
-            # 3. Vérification d'autorisation selon le rôle
+            # Vérification autorisation
             role_utilisateur = session.get('role_utilisateur', '').lower()
             if role_utilisateur not in ['full', section.lower()]:
                 flash(f"⚠️ Paiement refusé : votre profil n’a pas accès à la section « {section} ».", "danger")
                 return redirect(url_for('paiement'))
 
-            # 4. Récupération du montant à payer depuis la table tarifs
-            cursor.execute("SELECT id FROM classes WHERE nom = ?", (nom_classe,))
+            # Tarif minerval
+            cursor.execute("SELECT id FROM classes WHERE nom = %s", (nom_classe,))
             classe_id_row = cursor.fetchone()
             if not classe_id_row:
                 flash("Classe non reconnue dans le système.", "danger")
                 return redirect(url_for('paiement'))
-
             classe_id = classe_id_row[0]
 
-            cursor.execute("""
-                SELECT montant FROM tarifs 
-                WHERE classe_id = ? AND type = 'minerval'
-            """, (classe_id,))
+            cursor.execute("SELECT montant FROM tarifs WHERE classe_id = %s AND type = 'minerval'", (classe_id,))
             tarif_row = cursor.fetchone()
-
             if not tarif_row:
                 flash("Aucun tarif enregistré pour cette classe.", "danger")
                 return redirect(url_for('paiement'))
 
             montant_a_payer = float(tarif_row[0])
             montant_restant = montant_a_payer - montant_paye
-            # 4.5 Vérification de paiement en double
+
+            # Vérification doublon
             cursor.execute("""
                 SELECT id FROM paiements 
-                WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+                WHERE matricule = %s AND mois = %s AND annee_scolaire = %s
             """, (matricule, mois, annee_scolaire))
             paiement_existant = cursor.fetchone()
-
             if paiement_existant:
                 flash(f"⚠️ Paiement déjà enregistré pour {mois} ({annee_scolaire}).", "warning")
                 return redirect(url_for('paiement'))
-            doublon = conn.execute("""
-                SELECT 1 FROM paiements
-                WHERE matricule = ? AND mois = ? AND date_paiement = ? AND montant_paye = ? AND annee_scolaire = ?
-            """, (matricule, mois, date_paiement, montant_paye, annee_scolaire)).fetchone()
 
+            cursor.execute("""
+                SELECT 1 FROM paiements
+                WHERE matricule = %s AND mois = %s AND date_paiement = %s AND montant_paye = %s AND annee_scolaire = %s
+            """, (matricule, mois, date_paiement, montant_paye, annee_scolaire))
+            doublon = cursor.fetchone()
             if doublon:
                 flash("Ce paiement semble déjà exister.", "warning")
-                return redirect(url_for('page_du_formulaire'))
+                return redirect(url_for('paiement'))
 
-            # 5. Insertion dans la table paiements
+            # Insertion paiement
             cursor.execute("""
                 INSERT INTO paiements (
                     matricule, mois, annee_scolaire, montant_paye, montant_a_payer, montant_restant,
                     mode_paiement, date_paiement, observation
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 matricule, mois, annee_scolaire, montant_paye, montant_a_payer, montant_restant,
                 mode_paiement, date_paiement, observation
             ))
-            log_action("Paiement enregistré", session['nom_utilisateur'])
-            paiement_id = cursor.lastrowid
             conn.commit()
-            conn = sqlite3.connect('ecole.db')
-            c = conn.cursor()
+            paiement_id = cursor.lastrowid
 
-            # Récupérer le numéro de téléphone du responsable en fonction du matricule
-            c.execute("SELECT telephone_responsable FROM eleves WHERE matricule = ?", (matricule,))
-            resultat = c.fetchone()
+            # Téléphone responsable
+            cursor.execute("SELECT telephone_responsable FROM eleves WHERE matricule = %s", (matricule,))
+            resultat = cursor.fetchone()
+            telephone_responsable = resultat[0] if resultat else None
 
-            if resultat:
-                telephone_responsable = resultat[0]
-            else:
-                telephone_responsable = None  # Ou lève une erreur selon ton besoin
-
-            conn.close()
-
-            message = f"C.S.Immaculée Conception de la Charité : Bonjour, nous confirmons le paiement de {montant_paye}$ du mois de {mois} pour l'élève {nom} {postnom} {prenom} ({matricule}). le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
-            envoyer_sms(telephone_responsable, message)
-
-            conn.close()
-
-            # 6. Redirection vers la page de confirmation
-            return redirect(url_for('confirmation_paiement',
-                                    matricule=matricule,
-                                    nom_complet=nom_complet,
-                                    genre=genre,
-                                    mois=mois,
-                                    montant_paye=montant_paye,
-                                    montant_a_payer=montant_a_payer,
-                                    caissiere=observation,
-                                    paiement_id=paiement_id))
+            log_action("Paiement enregistré", session['nom_utilisateur'])
 
         except Exception as e:
             import traceback
             traceback.print_exc()
             flash("Erreur lors de l'enregistrement du paiement.", "danger")
             return redirect(url_for('paiement'))
+        finally:
+            if 'conn' in locals():
+                conn.close()
 
-    # GET → Affichage du formulaire
-    return render_template('paiement.html')
+        # Envoi SMS si numéro dispo
+        if telephone_responsable:
+            message = (f"C.S.Immaculée Conception de la Charité : Bonjour, nous confirmons le paiement de {montant_paye}$ "
+                       f"du mois de {mois} pour l'élève {nom} {postnom} {prenom} ({matricule}). "
+                       f"Le montant restant pour finaliser le paiement est de {montant_restant}$ Merci.")
+            envoyer_sms(telephone_responsable, message)
+
+        # Redirection confirmation
+        return redirect(url_for('confirmation_paiement',
+                                matricule=matricule,
+                                nom_complet=nom_complet,
+                                genre=genre,
+                                mois=mois,
+                                montant_paye=montant_paye,
+                                montant_a_payer=montant_a_payer,
+                                caissiere=observation,
+                                paiement_id=paiement_id))
+    else:
+        # GET: afficher formulaire
+        return render_template('paiement.html')
+
 
 
 @app.route('/confirmation_paiement')
@@ -912,14 +941,15 @@ def recu_paiement(id):
         
         return redirect(url_for('gestion_minerval'))  # Ou vers une page où il peut juste consulter
     try:
-        conn = sqlite3.connect('ecole.db')
-        conn.row_factory = sqlite3.Row
-        paiement = conn.execute("""
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("""
             SELECT p.*, e.nom, e.postnom, e.prenom, e.genre, e.classe 
             FROM paiements p
             JOIN eleves e ON p.matricule = e.matricule
-            WHERE p.id = ?
-        """, (id,)).fetchone()
+            WHERE p.id = %s
+        """, (id,))
+        paiement = cursor.fetchone()
         conn.close()
 
         if not paiement:
@@ -990,37 +1020,43 @@ def recu_paiement(id):
 @app.route('/infos_eleve/<matricule>')
 @login_required
 def infos_eleve(matricule):
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory=sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Rechercher l'élève
-    cursor.execute("SELECT nom, postnom, prenom, genre, section, classe, annee_scolaire FROM eleves WHERE matricule = ?", (matricule,))
+    cursor.execute("SELECT nom, postnom, prenom, genre, section, classe, annee_scolaire FROM eleves WHERE matricule = %s", (matricule,))
     eleve = cursor.fetchone()
 
     if not eleve:
         conn.close()
         return jsonify({'error': 'Élève introuvable'}), 404
 
-    nom, postnom, prenom, genre, section, nom_classe, annee_scolaire = eleve
+    nom = eleve['nom']
+    postnom = eleve['postnom']
+    prenom = eleve['prenom']
+    genre = eleve['genre']
+    section = eleve['section']
+    nom_classe = eleve['classe']
+    annee_scolaire = eleve['annee_scolaire']
+
 
     # Trouver l'ID de la classe
-    cursor.execute("SELECT id FROM classes WHERE nom = ?", (nom_classe,))
+    cursor.execute("SELECT id FROM classes WHERE nom = %s", (nom_classe,))
     classe_row = cursor.fetchone()
     if not classe_row:
         conn.close()
         return jsonify({'error': 'Classe introuvable'}), 404
 
-    classe_id = classe_row[0]
+    classe_id = classe_row['id']
 
     # Trouver le montant du minerval
-    cursor.execute("SELECT montant FROM tarifs WHERE classe_id = ? AND type = 'minerval'", (classe_id,))
+    cursor.execute("SELECT montant FROM tarifs WHERE classe_id = %s AND type = 'minerval'", (classe_id,))
     tarif_row = cursor.fetchone()
     if not tarif_row:
         conn.close()
         return jsonify({'error': 'Tarif introuvable'}), 404
 
-    montant = float(tarif_row[0])
+    montant = float(tarif_row['montant'])
     conn.close()
 
     # Retourner les données au frontend
@@ -1038,15 +1074,21 @@ def infos_eleve(matricule):
 @app.route('/historique_paiements', methods=['GET', 'POST'])
 @login_required
 def historique_paiements():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory=sqlite3.Row
-    cursor = conn.cursor()
-
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    
     # 🔍 Récupération des valeurs uniques pour les listes déroulantes
-    classes = [row['classe'] for row in conn.execute("SELECT DISTINCT classe FROM eleves").fetchall()]
-    sections = [row['section'] for row in conn.execute("SELECT DISTINCT section FROM eleves").fetchall()]
-    mois_disponibles = [row['mois'] for row in conn.execute("SELECT DISTINCT mois FROM paiements").fetchall()]
-    caissiers = [row['observation'] for row in conn.execute("SELECT DISTINCT observation FROM paiements WHERE observation IS NOT NULL").fetchall()]
+    cursor.execute("SELECT DISTINCT classe FROM eleves")
+    classes = [row['classe'] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT DISTINCT section FROM eleves")
+    sections = [row['section'] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT DISTINCT mois FROM paiements")
+    mois_disponibles = [row['mois'] for row in cursor.fetchall()]
+    
+    cursor.execute("SELECT DISTINCT observation FROM paiements WHERE observation IS NOT NULL")
+    caissiers = [row['observation'] for row in cursor.fetchall()]
 
     # Récupération des filtres envoyés via formulaire
     filtre_matricule = request.form.get('filtre_matricule', '').strip()
@@ -1062,16 +1104,15 @@ def historique_paiements():
         FROM paiements p
         JOIN eleves e ON p.matricule = e.matricule
         WHERE 1=1
-
     """
     params = []
 
     if filtre_matricule:
-        requete += " AND p.matricule LIKE ?"
+        requete += " AND p.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
-        requete += " AND e.classe = ?"
+        requete += " AND e.classe = %s"
         params.append(filtre_classe)
 
     if filtre_ordre == "Oui":
@@ -1080,19 +1121,21 @@ def historique_paiements():
         requete += " AND CAST(p.montant_paye AS FLOAT) < CAST(p.montant_a_payer AS FLOAT)"
 
     if filtre_mois:
-        requete += " AND p.mois = ?"
+        requete += " AND p.mois = %s"
         params.append(filtre_mois)
 
     if filtre_jour:
-        requete += " AND p.date_paiement = ?"
+        requete += " AND p.date_paiement = %s"
         params.append(filtre_jour)
 
     if filtre_caissier:
-        requete += " AND p.observation = ?"
+        requete += " AND p.observation = %s"
         params.append(filtre_caissier)
 
     requete += " ORDER BY p.date_paiement DESC"
-    paiements = conn.execute(requete, params).fetchall()
+
+    cursor.execute(requete, params)
+    paiements = cursor.fetchall()
 
     # Formatage des données
     paiements_formates = []
@@ -1117,8 +1160,8 @@ def historique_paiements():
             'section': paiement['section'],
             'mois': paiement['mois'],
             'date': paiement['date_paiement'],
-            'montant_a_payer': float(montant_a_payer),
-            'montant_paye': float(montant_paye),
+            'montant_a_payer': montant_a_payer,
+            'montant_paye': montant_paye,
             'mode_paiement': paiement['mode_paiement'],
             'caissiere': paiement['observation'],
             'ordre': ordre
@@ -1141,6 +1184,7 @@ def historique_paiements():
         caissiers=caissiers
     )
 
+
 @app.route('/telecharger_historique_paiement')
 @login_required
 def telecharger_historique_paiement():
@@ -1151,9 +1195,8 @@ def telecharger_historique_paiement():
     filtre_jour = request.args.get('filtre_jour', '')
     filtre_caissier = request.args.get('filtre_caissier', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = conn = conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Requête SQL dynamique avec filtres
     query = """
@@ -1165,27 +1208,29 @@ def telecharger_historique_paiement():
     params = []
 
     if filtre_matricule:
-        query += " AND p.matricule LIKE ?"
+        query += " AND p.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
 
     if filtre_mois:
-        query += " AND p.mois = ?"
+        query += " AND p.mois = %s"
         params.append(filtre_mois)
 
     if filtre_jour:
-        query += " AND p.date_paiement = ?"
+        query += " AND p.date_paiement = %s"
         params.append(filtre_jour)
 
     if filtre_caissier:
-        query += " AND p.observation = ?"
+        query += " AND p.observation = %s"
         params.append(filtre_caissier)
 
     query += " ORDER BY p.date_paiement DESC"
-    paiements = conn.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    paiements = cursor.fetchall()  # car fetchall() sans argument
+    cursor.close()
     conn.close()
 
     # 🔽 Création du fichier PDF
@@ -1199,7 +1244,7 @@ def telecharger_historique_paiement():
     styles = getSampleStyleSheet()
 
     data = [
-        ["#", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Date", "Payé", "À payer", "Ordre", "Caissier(ère)"]
+        ["N°", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Date", "Payé", "À payer", "Ordre", "Caissier(ère)"]
     ]
 
     total_recu = 0  # 👉 Initialiser le total payé filtré
@@ -1226,7 +1271,7 @@ def telecharger_historique_paiement():
             Paragraph(p['observation'] or "", styles["Normal"])
         ])
 
-    table = Table(data, colWidths=[30, 90, 160, 80, 60, 50, 65, 70, 70, 40, 90])
+    table = Table(data, colWidths=[30, 70, 140, 80, 50, 50, 65, 70, 70, 40, 70])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1240,7 +1285,7 @@ def telecharger_historique_paiement():
 
     # ➕ Ajouter une ligne de résumé du total reçu
     total_data = [["", "", "", "", "", "", "Total reçu :", f"{total_recu:,.1f} $", "", "", ""]]
-    total_table = Table(total_data, colWidths=[30, 90, 160, 80, 60, 50, 65, 70, 70, 40, 90])
+    total_table = Table(total_data, colWidths=[30, 70, 140, 80, 50, 50, 65, 70, 70, 40, 70])
     total_table.setStyle(TableStyle([
         ('SPAN', (0, 0), (6, 0)),
         ('BACKGROUND', (0, 0), (-1, -1), colors.lightgrey),
@@ -1255,10 +1300,10 @@ def telecharger_historique_paiement():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -1267,15 +1312,14 @@ def telecharger_historique_paiement():
         canvas.drawCentredString(largeur / 2, hauteur - 60, "HISTORIQUE DES PAIEMENTS")
 
         canvas.setFont("Helvetica", 9)
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
         canvas.setFont("Helvetica", 12)
         y = hauteur - 110
-        canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
-        canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
-        canvas.drawString(300, y, f"Jour : {filtre_jour or '---'}")
-        canvas.drawString(420, y, f"Caissier : {filtre_caissier or '---'}")
-        canvas.drawString(600, y, f"Matricule : {filtre_matricule or '---'}")
+        canvas.drawString(60, y, f"Classe : {filtre_classe or '---'}")
+        canvas.drawString(250, y, f"Mois : {filtre_mois or '---'}")
+        canvas.drawString(410, y, f"Jour : {filtre_jour or '---'}")
+        canvas.drawString(580, y, f"Caissier : {filtre_caissier or '---'}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=130, leftMargin=25, rightMargin=25, bottomMargin=40)
@@ -1289,13 +1333,15 @@ def telecharger_historique_paiement():
 @app.route('/eleves_non_en_ordre', methods=['GET', 'POST'])
 @login_required
 def eleves_non_en_ordre():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory=sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Récupération des valeurs uniques pour les filtres
-    classes = [row['classe'] for row in conn.execute("SELECT DISTINCT classe FROM eleves").fetchall()]
-    mois_disponibles = [row['mois'] for row in conn.execute("SELECT DISTINCT mois FROM paiements").fetchall()]
+    cursor.execute("SELECT DISTINCT classe FROM eleves")
+    classes = [row['classe'] for row in cursor.fetchall()]
+
+    cursor.execute("SELECT DISTINCT mois FROM paiements")
+    mois_disponibles = [row['mois'] for row in cursor.fetchall()]
 
     filtre_matricule = request.form.get('filtre_matricule', '').strip()
     filtre_classe = request.form.get('filtre_classe', '')
@@ -1317,13 +1363,13 @@ def eleves_non_en_ordre():
 
     # Filtres
     if filtre_matricule:
-        query += " AND p.matricule LIKE ?"
+        query += " AND p.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
     if filtre_mois:
-        query += " AND p.mois = ?"
+        query += " AND p.mois = %s"
         params.append(filtre_mois)
 
     query += """
@@ -1331,8 +1377,8 @@ def eleves_non_en_ordre():
         HAVING total_montant_paye < montant_a_payer
         ORDER BY date_paiement DESC
     """
-
-    resultats = conn.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    resultats = cursor.fetchall()
     conn.close()
 
     # Renommer les champs pour correspondre à ceux utilisés dans le template HTML
@@ -1369,9 +1415,8 @@ def telecharger_non_en_ordre():
     filtre_classe = request.args.get('filtre_classe', '')
     filtre_mois = request.args.get('filtre_mois', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = """
         SELECT e.nom, e.postnom, e.prenom, e.matricule, e.classe, e.section,
@@ -1386,13 +1431,13 @@ def telecharger_non_en_ordre():
     params = []
 
     if filtre_matricule:
-        query += " AND p.matricule LIKE ?"
+        query += " AND p.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
     if filtre_mois:
-        query += " AND p.mois = ?"
+        query += " AND p.mois = %s"
         params.append(filtre_mois)
 
     query += """
@@ -1402,7 +1447,8 @@ def telecharger_non_en_ordre():
     """
 
 
-    resultats = conn.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    resultats = cursor.fetchall()
     conn.close()
 
     # Création du PDF
@@ -1415,7 +1461,7 @@ def telecharger_non_en_ordre():
     styles = getSampleStyleSheet()
 
     data = [
-        ["#", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Montant payé", "À payer", "Date"]
+        ["N°", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Montant payé", "À payer", "Date"]
     ]
 
     for i, r in enumerate(resultats, start=1):
@@ -1432,7 +1478,7 @@ def telecharger_non_en_ordre():
             r['derniere_date']
         ])
 
-    table = Table(data, colWidths=[30, 90, 160, 100, 60, 50, 70, 70, 70])
+    table = Table(data, colWidths=[30, 90, 170, 110, 70, 70, 80, 60, 70])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1450,10 +1496,10 @@ def telecharger_non_en_ordre():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -1462,13 +1508,13 @@ def telecharger_non_en_ordre():
         canvas.drawCentredString(largeur / 2, hauteur - 60, "ELEVES PARTIELLEMENT EN ORDRE")
 
         canvas.setFont("Helvetica", 9)
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
         canvas.setFont("Helvetica", 12)
         y = hauteur - 110
-        canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
-        canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
-        canvas.drawString(400, y, f"Matricule : {filtre_matricule or '---'}")
+        canvas.drawString(60, y, f"Classe : {filtre_classe or '---'}")
+        canvas.drawString(370, y, f"Mois : {filtre_mois or '---'}")
+        canvas.drawString(570, y, f"Matricule : {filtre_matricule or '---'}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=130, leftMargin=25, rightMargin=25, bottomMargin=40)
@@ -1480,7 +1526,7 @@ def telecharger_non_en_ordre():
 @login_required
 def recu_finalisation(matricule, mois):
     filename = f"recu_finalisation_{matricule}_{mois}.pdf"
-    folder = "reçus_minerval"
+    folder = "recus_minerval"
     filepath = os.path.join(folder, filename)
 
     if os.path.exists(filepath):
@@ -1492,43 +1538,42 @@ def recu_finalisation(matricule, mois):
 @login_required
 def finaliser_paiement(matricule, mois):
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # 🔍 Récupérer le paiement partiel existant
-    paiement = conn.execute("""
+    cursor.execute("""
         SELECT p.*, e.nom, e.postnom, e.prenom, e.classe, e.section, e.genre
         FROM paiements p
         JOIN eleves e ON p.matricule = e.matricule
-        WHERE p.matricule = ? AND p.mois = ?
-    """, (matricule, mois)).fetchone()
-
+        WHERE p.matricule = %s AND p.mois = %s
+    """, (matricule, mois))
+    paiement = cursor.fetchone()
 
     if not paiement:
         conn.close()
         return "Paiement introuvable", 404
 
-    somme_paye = conn.execute("""
+    cursor.execute("""
         SELECT SUM(montant_paye) as total
         FROM paiements
-        WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
-    """, (matricule, mois, paiement['annee_scolaire'])).fetchone()
+        WHERE matricule = %s AND mois = %s AND annee_scolaire = %s
+    """, (matricule, mois, paiement['annee_scolaire']))
+    somme_paye = cursor.fetchone()
 
     montant_paye_total = float(somme_paye['total'] or 0)
     montant_a_payer = float(paiement['montant_a_payer'] or 0)
     montant_restant = montant_a_payer - montant_paye_total
-    cursor.execute("SELECT section FROM eleves WHERE matricule = ?", (matricule,))
+
+    cursor.execute("SELECT section FROM eleves WHERE matricule = %s", (matricule,))
     section_row = cursor.fetchone()
     if section_row:
-        section = section_row[0]
+        section = section_row['section']
 
-            # 🔐 Vérification d'autorisation ici
         role_utilisateur = session.get('role_utilisateur', '').lower()
         if role_utilisateur not in ['full', section.lower()]:
             return redirect(url_for('eleves_non_en_ordre'))
 
-    # 🔐 Récupérer le nom du caissier à partir de la session
     nom_caissier = session.get('nom_utilisateur', 'inconnu')
 
     if request.method == 'POST':
@@ -1539,29 +1584,26 @@ def finaliser_paiement(matricule, mois):
 
         date_paiement = request.form['date_paiement']
         mode_paiement = request.form['mode_paiement']
-        # On utilise directement le caissier connecté (readonly côté HTML)
         observation = nom_caissier
-
         nouveau_montant = montant_paye_total + montant_complement
-        annee_scolaire=paiement['annee_scolaire']
+        annee_scolaire = paiement['annee_scolaire']
 
-
-        # Vérifier si un paiement identique a déjà été enregistré
-        doublon = conn.execute("""
+        cursor.execute("""
             SELECT 1 FROM paiements
-            WHERE matricule = ? AND mois = ? AND date_paiement = ? AND montant_paye = ? AND annee_scolaire = ?
-        """, (matricule, mois, date_paiement, montant_complement, annee_scolaire)).fetchone()
+            WHERE matricule = %s AND mois = %s AND date_paiement = %s AND montant_paye = %s AND annee_scolaire = %s
+        """, (matricule, mois, date_paiement, montant_complement, annee_scolaire))
+        doublon = cursor.fetchone()
 
         if doublon:
             conn.close()
             flash("Ce paiement a déjà été enregistré.", "warning")
             return redirect(url_for('finaliser_paiement', matricule=matricule, mois=mois))
 
-        conn.execute("""
+        cursor.execute("""
             INSERT INTO paiements (
                 matricule, mois, montant_a_payer, montant_paye,
                 mode_paiement, date_paiement, observation, annee_scolaire
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
         """, (
             paiement['matricule'],
             paiement['mois'],
@@ -1571,52 +1613,47 @@ def finaliser_paiement(matricule, mois):
             date_paiement,
             observation,
             paiement['annee_scolaire']
-            ))
+        ))
         log_action("Finalisation Paiement enregistré", session['nom_utilisateur'])
         conn.commit()
+
         montant_restant = montant_a_payer - (montant_paye_total + montant_complement)
         message = f"C.S.Immaculée Conception de la Charité : Bonjour, nous confirmons la finalisation du paiement de {montant_complement}$ pour le mois de {mois} concernant l'élève {paiement['nom']} {paiement['postnom']} {paiement['prenom']} ({matricule}). Le montant restant pour finaliser le paiement est de {montant_restant}$ Merci."
-        cursor.execute("SELECT telephone_responsable FROM eleves WHERE matricule = ?", (matricule,))
+
+        cursor.execute("SELECT telephone_responsable FROM eleves WHERE matricule = %s", (matricule,))
         tel_row = cursor.fetchone()
         if tel_row:
-            telephone_responsable = tel_row[0]
+            telephone_responsable = tel_row['telephone_responsable']
             envoyer_sms(telephone_responsable, message)
-
 
         conn.close()
 
-        
-                # ✅ Génération automatique du reçu après finalisation
+        # ✅ Génération automatique du reçu
         nom_complet = f"{paiement['nom']} {paiement['postnom']} {paiement['prenom']}"
-        montant_restant = montant_a_payer - (montant_paye_total + montant_complement)
-
         filename = f"recu_finalisation_{paiement['matricule']}_{mois}.pdf"
-        filepath = os.path.join("reçus_minerval", filename)
-        if not os.path.exists("reçus_minerval"):
-            os.makedirs("reçus_minerval")
+        filepath = os.path.join("recus_minerval", filename)
+        if not os.path.exists("recus_minerval"):
+            os.makedirs("recus_minerval")
 
         c = canvas.Canvas(filepath, pagesize=A6)
 
         try:
-                logo_gauche = ImageReader("static/logo1.jpg")
-                logo_droite = ImageReader("static/logo.jpg")
-
-                    # Logos gauche et droite
-                c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
-                c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_droite = ImageReader("static/logo.jpg")
+            c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
-                pass
-            # Filigrane
+            pass
+
         try:
-                    logo = ImageReader("static/logo2.png")
-                    c.saveState()
-                    c.setFillAlpha(0.08)
-                    c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-                    c.restoreState()
+            logo = ImageReader("static/logo2.png")
+            c.saveState()
+            c.setFillAlpha(0.08)
+            c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
+            c.restoreState()
         except:
-                    pass
+            pass
 
-            # Texte
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
         c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
@@ -1633,45 +1670,38 @@ def finaliser_paiement(matricule, mois):
         c.drawString(25, 120, f"Montant payé : {montant_complement:,.1f} $")
         c.drawString(25, 100, f"Montant restant : {montant_restant:,.1f} $")
         c.drawString(25, 80, f"Caissier(ère) : {observation}")
-
         c.setFont("Helvetica-Oblique", 10)
         c.drawString(25, 50, "Merci pour votre confiance!")
         c.drawString(25, 40, "Veillez bien garder votre reçu!")
         c.save()
 
-        conn.close()
-
-        # Construire l'URL publique pour accéder au PDF généré
-        url_pdf = url_for('recu_finalisation', matricule=matricule, mois=mois)
-
-        # Rediriger vers la page d'impression intermédiaire avec l'URL du PDF en paramètre
-        return redirect(url_for('imprimer_pdf') + '?url=' + url_pdf)
-
+        return redirect(url_for('imprimer_pdf') + '?url=' + url_for('recu_finalisation', matricule=matricule, mois=mois))
 
     conn.close()
     return render_template("finaliser_paiement.html",
                            paiement=paiement,
                            montant_restant=montant_restant,
-                           montant_paye_total=montant_paye_total,  # 🆕 ligne à ajouter
+                           montant_paye_total=montant_paye_total,
                            nom_caissier=nom_caissier,
-                           current_date=datetime.now().strftime('%Y-%m-%d'),)
+                           current_date=datetime.now().strftime('%Y-%m-%d'))
 
 
 @app.route('/eleves_en_ordre', methods=['GET', 'POST'])
 @login_required
 def eleves_en_ordre():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     filtre_matricule = ''
     filtre_classe = ''
     filtre_mois = ''
 
     # Pour les filtres
-    classes = [row['classe'] for row in cursor.execute("SELECT DISTINCT classe FROM eleves").fetchall()]
-    mois_disponibles = [row['mois'] for row in cursor.execute("SELECT DISTINCT mois FROM paiements").fetchall()]
+    cursor.execute("SELECT DISTINCT classe FROM eleves")
+    classes = [row['classe'] for row in cursor.fetchall()]
 
+    cursor.execute("SELECT DISTINCT mois FROM paiements")
+    mois = [row['mois'] for row in cursor.fetchall()]
     # Requête de base
     query = """
         SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section,
@@ -1690,15 +1720,15 @@ def eleves_en_ordre():
         filtre_mois = request.form.get('filtre_mois', '')
 
     if filtre_matricule:
-        query += " AND e.matricule LIKE ?"
+        query += " AND e.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
 
     if filtre_mois:
-        query += " AND p.mois = ?"
+        query += " AND p.mois = %s"
         params.append(filtre_mois)
 
     # 🔄 Groupement
@@ -1706,11 +1736,15 @@ def eleves_en_ordre():
 
     # ✅ Filtrer ceux qui ont payé en totalité
     query = f"""
-        SELECT * FROM ({query}) 
+        SELECT * FROM (
+            {query}
+        ) AS sous_requete
         WHERE montant_paye >= montant_a_payer
     """
 
-    resultats = cursor.execute(query, params).fetchall()
+
+    cursor.execute(query, params)
+    resultats = cursor.fetchall()
     conn.close()
 
     return render_template('eleves_en_ordre.html',
@@ -1719,7 +1753,7 @@ def eleves_en_ordre():
                            filtre_classe=filtre_classe,
                            filtre_mois=filtre_mois,
                            classes=classes,
-                           mois_disponibles=mois_disponibles)
+                           mois_disponibles=mois)
 
 @app.route('/telecharger_eleves_en_ordre')
 @login_required
@@ -1731,9 +1765,8 @@ def telecharger_eleves_en_ordre():
     filtre_jour = request.args.get('filtre_jour', '')
     filtre_caissier = request.args.get('filtre_caissier', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory=sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Requête SQL dynamique avec filtres
     query = """
@@ -1753,27 +1786,29 @@ def telecharger_eleves_en_ordre():
     params = []
 
     if filtre_matricule:
-        query += " AND p.matricule LIKE ?"
+        query += " AND p.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
 
     if filtre_mois:
-        query += " AND p.mois = ?"
+        query += " AND p.mois = %s"
         params.append(filtre_mois)
 
     if filtre_jour:
-        query += " AND p.date_paiement = ?"
+        query += " AND p.date_paiement = %s"
         params.append(filtre_jour)
 
     if filtre_caissier:
-        query += " AND p.observation = ?"
+        query += " AND p.observation = %s"
         params.append(filtre_caissier)
 
     query += " GROUP BY p.matricule, p.mois HAVING SUM(p.montant_paye) >= MAX(p.montant_a_payer) ORDER BY p.date_paiement DESC"
-    paiements = conn.execute(query, params).fetchall()
+    
+    cursor.execute(query, params)
+    paiements = cursor.fetchall()
     conn.close()
 
     # Création du fichier PDF
@@ -1786,7 +1821,7 @@ def telecharger_eleves_en_ordre():
     styles = getSampleStyleSheet()
 
     data = [
-        ["#", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Date", "Payé", "À payer", "Ordre", "Caissière"]
+        ["N°", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Ordre", "Caissière"]
     ]
 
     for i, p in enumerate(paiements, start=1):
@@ -1803,14 +1838,11 @@ def telecharger_eleves_en_ordre():
             Paragraph(p['classe'], styles["Normal"]),
             p['section'],
             p['mois'],
-            p['date_paiement'],
-            f"{montant_paye:,.1f} $",
-            f"{montant_a_payer:,.1f} $",
             ordre,
             Paragraph(p['observation'] or "", styles["Normal"])
         ])
 
-    table = Table(data, colWidths=[30, 90, 160, 100, 60, 50, 65, 70, 70, 40, 90])
+    table = Table(data, colWidths=[30, 90, 180, 150, 60, 65, 50, 120])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1828,10 +1860,10 @@ def telecharger_eleves_en_ordre():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -1840,15 +1872,14 @@ def telecharger_eleves_en_ordre():
         canvas.drawCentredString(largeur / 2, hauteur - 60, "ELEVES EN ORDRE")
 
         canvas.setFont("Helvetica", 9)
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
         canvas.setFont("Helvetica", 12)
         y = hauteur - 110
-        canvas.drawString(30, y, f"Classe : {filtre_classe or '---'}")
-        canvas.drawString(180, y, f"Mois : {filtre_mois or '---'}")
-        canvas.drawString(300, y, f"Jour : {filtre_jour or '---'}")
-        canvas.drawString(420, y, f"Caissier : {filtre_caissier or '---'}")
-        canvas.drawString(600, y, f"Matricule : {filtre_matricule or '---'}")
+        canvas.drawString(60, y, f"Classe : {filtre_classe or '---'}")
+        canvas.drawString(260, y, f"Mois : {filtre_mois or '---'}")
+        canvas.drawString(450, y, f"Jour : {filtre_jour or '---'}")
+        canvas.drawString(600, y, f"Caissier : {filtre_caissier or '---'}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=130, leftMargin=25, rightMargin=25, bottomMargin=40)
@@ -1866,12 +1897,12 @@ def eleves_sans_paiement():
     filtre_mois = ''
     mois_disponibles = [ "Septembre", "Octobre", "Novembre", "Décembre","Janvier", "Février", "Mars", "Avril"]
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # 📌 Récupérer toutes les classes pour la sélection
-    classes = [row['classe'] for row in cursor.execute("SELECT DISTINCT classe FROM eleves").fetchall()]
+    cursor.execute("SELECT DISTINCT classe FROM eleves")
+    classes = [row['classe'] for row in cursor.fetchall()]
 
     if request.method == 'POST':
         filtre_matricule = request.form.get('filtre_matricule', '').strip()
@@ -1884,20 +1915,21 @@ def eleves_sans_paiement():
         FROM eleves e
         WHERE NOT EXISTS (
             SELECT 1 FROM paiements p
-            WHERE p.matricule = e.matricule AND p.mois = ?
+            WHERE p.matricule = e.matricule AND p.mois = %s
         )
     """
     params = [filtre_mois or ""]
 
     if filtre_matricule:
-        query += " AND e.matricule LIKE ?"
+        query += " AND e.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
 
-    resultats = cursor.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    resultats = cursor.fetchall()
     conn.close()
 
     return render_template("eleves_sans_paiement.html",
@@ -1915,12 +1947,13 @@ def telecharger_sans_paiement():
     filtre_classe = request.args.get('filtre_classe', '')
     filtre_mois = request.args.get('filtre_mois', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Tous les élèves
-    tous_les_eleves = conn.execute("SELECT * FROM eleves").fetchall()
+    cursor.execute("SELECT * FROM eleves")
+    tous_les_eleves = cursor.fetchall()
+
 
     # Tous les paiements selon les filtres
     query_paiement = """
@@ -1929,18 +1962,19 @@ def telecharger_sans_paiement():
     params = []
 
     if filtre_mois:
-        query_paiement += " AND mois = ?"
+        query_paiement += " AND mois = %s"
         params.append(filtre_mois)
 
     if filtre_classe:
-        query_paiement += " AND matricule IN (SELECT matricule FROM eleves WHERE classe = ?)"
+        query_paiement += " AND matricule IN (SELECT matricule FROM eleves WHERE classe = %s)"
         params.append(filtre_classe)
 
     if filtre_matricule:
-        query_paiement += " AND matricule LIKE ?"
+        query_paiement += " AND matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
-    paiements = conn.execute(query_paiement, params).fetchall()
+    cursor.execute(query_paiement, params)
+    paiements = cursor.fetchall()
     matricules_payes = set([p['matricule'] for p in paiements])
 
     # Filtrer les élèves sans paiement
@@ -1963,7 +1997,7 @@ def telecharger_sans_paiement():
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
 
-    data = [["#", "Matricule", "Nom complet", "Genre", "Classe", "Section"]]
+    data = [["N°", "Matricule", "Nom complet", "Genre", "Classe", "Section"]]
     for i, e in enumerate(eleves_sans_paiement, start=1):
         nom_complet = f"{e['nom']} {e['postnom']} {e['prenom']}"
         data.append([
@@ -1975,7 +2009,7 @@ def telecharger_sans_paiement():
             e['section']
         ])
 
-    table = Table(data, colWidths=[50, 110, 190, 60, 70, 80])
+    table = Table(data, colWidths=[50, 120, 200, 80, 170, 100])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1992,10 +2026,10 @@ def telecharger_sans_paiement():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
 
@@ -2005,10 +2039,10 @@ def telecharger_sans_paiement():
         canvas.drawCentredString(largeur / 2, hauteur - 60, "ÉLÈVES SANS PAIEMENT")
 
         canvas.setFont("Helvetica", 12)
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
-        canvas.drawString(30, hauteur - 100, f"Classe : {filtre_classe or '---'}")
-        canvas.drawString(200, hauteur - 100, f"Mois : {filtre_mois or '---'}")
-        canvas.drawString(400, hauteur - 100, f"Matricule : {filtre_matricule or '---'}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawString(60, hauteur - 100, f"Classe : {filtre_classe or '---'}")
+        canvas.drawString(300, hauteur - 100, f"Mois : {filtre_mois or '---'}")
+        canvas.drawString(500, hauteur - 100, f"Matricule : {filtre_matricule or '---'}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=130, leftMargin=25, rightMargin=25, bottomMargin=40)
@@ -2025,16 +2059,15 @@ def statistiques_paiements():
     section = request.args.get('section', '')
     annee_scolaire = request.args.get('annee_scolaire', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Requête principale avec ajout de nb_ayant_paye
     query = """
         SELECT 
             e.classe,
             s.nom AS section,
-            ? AS mois,
+            %s AS mois,
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_ayant_paye,
             COALESCE(SUM(p.montant_paye), 0) AS total_paye,
@@ -2044,11 +2077,11 @@ def statistiques_paiements():
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
         LEFT JOIN paiements p ON e.matricule = p.matricule
-            AND (? = '' OR p.mois = ?)
-            AND (? = '' OR p.annee_scolaire = ?)
+            AND (%s = '' OR p.mois = %s)
+            AND (%s = '' OR p.annee_scolaire = %s)
         LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-        WHERE (? = '' OR e.classe = ?)
-        AND (? = '' OR s.nom = ?)
+        WHERE (%s = '' OR e.classe = %s)
+        AND (%s = '' OR s.nom = %s)
         GROUP BY e.classe, s.nom, t.montant
         ORDER BY e.classe
     """
@@ -2061,7 +2094,8 @@ def statistiques_paiements():
         section, section
     ]
 
-    statistiques = cursor.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    statistiques=cursor.fetchall()
 
     nb_mois_par_annee = 8  # nombre de mois de Septembre à Avril
     total_attendu_global = 0
@@ -2119,34 +2153,33 @@ def telecharger_statistiques_paiements():
     section = request.args.get('section', '')
     annee_scolaire = request.args.get('annee_scolaire', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = """
         SELECT 
             e.classe,
             s.nom AS section,
-            ? AS mois,
+            %s AS mois,
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_payeurs,
             COALESCE((
                 SELECT SUM(p2.montant_paye)
                 FROM paiements p2
                 WHERE p2.matricule = e.matricule
-                AND (? = '' OR p2.mois = ?)
-                AND (? = '' OR p2.annee_scolaire = ?)
+                AND (%s = '' OR p2.mois = %s)
+                AND (%s = '' OR p2.annee_scolaire = %s)
             ), 0) AS total_paye,
             COALESCE(t.montant * COUNT(DISTINCT e.matricule), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
         LEFT JOIN paiements p ON p.matricule = e.matricule 
-            AND (? = '' OR p.mois = ?) 
-            AND (? = '' OR p.annee_scolaire = ?)
+            AND (%s = '' OR p.mois = %s) 
+            AND (%s = '' OR p.annee_scolaire = %s)
         LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-        WHERE (? = '' OR e.classe = ?)
-        AND (? = '' OR s.nom = ?)
+        WHERE (%s = '' OR e.classe = %s)
+        AND (%s = '' OR s.nom = %s)
         GROUP BY e.classe, s.nom, t.montant
         ORDER BY e.classe
     """
@@ -2161,7 +2194,8 @@ def telecharger_statistiques_paiements():
         section, section
     ]
 
-    rows = cursor.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    rows=cursor.fetchall()
     rows = [dict(row) for row in rows]  # convertit en dict modifiable
     if annee_scolaire and (mois == '' or mois is None):
         for row in rows:
@@ -2185,7 +2219,7 @@ def telecharger_statistiques_paiements():
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
 
-    data = [["#", "Classe", "Section", "Mois", "Nbre élèves", "Ayant payé", "Total payé", "Total attendu", "Écart"]]
+    data = [["N°", "Classe", "Section", "Mois", "Nbre élèves", "Ayant payé", "Total payé", "Total attendu", "Écart"]]
     for i, row in enumerate(rows, start=1):
         ecart = row["total_attendu"] - row["total_paye"]
         data.append([
@@ -2232,10 +2266,10 @@ def telecharger_statistiques_paiements():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -2243,11 +2277,11 @@ def telecharger_statistiques_paiements():
         canvas.setFont("Helvetica-Bold", 13)
         canvas.drawCentredString(largeur / 2, hauteur - 60, "STATISTIQUES DES PAIEMENTS")
         canvas.setFont("Helvetica", 12)
-        canvas.drawString(30, hauteur - 100, f"Classe : {classe or '---'}")
-        canvas.drawString(200, hauteur - 100, f"Section : {section or '---'}")
-        canvas.drawString(380, hauteur - 100, f"Mois : {mois or '---'}")
-        canvas.drawString(530, hauteur - 100, f"Année scolaire : {annee_scolaire or '---'}")
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawString(60, hauteur - 100, f"Classe : {classe or '---'}")
+        canvas.drawString(300, hauteur - 100, f"Section : {section or '---'}")
+        canvas.drawString(440, hauteur - 100, f"Mois : {mois or '---'}")
+        canvas.drawString(570, hauteur - 100, f"Année scolaire : {annee_scolaire or '---'}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=120, leftMargin=25, rightMargin=25, bottomMargin=40)
@@ -2264,9 +2298,8 @@ def rapport_global_paiements():
     section = request.args.get('section', '')
     annee_scolaire = request.args.get('annee_scolaire', '')
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Récupérer les classes disponibles pour dropdown
     cursor.execute("SELECT DISTINCT classe FROM eleves")
@@ -2287,39 +2320,44 @@ def rapport_global_paiements():
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
-        WHERE (? = '' OR e.classe = ?)
-          AND (? = '' OR s.nom = ?)
+        WHERE (%s = '' OR e.classe = %s)
+          AND (%s = '' OR s.nom = %s)
     """
     params_eleves = [classe, classe, section, section]
-    eleves = cursor.execute(query_eleves, params_eleves).fetchall()
+    cursor.execute(query_eleves, params_eleves)
+    eleves=cursor.fetchall()
     matricules = [e['matricule'] for e in eleves]
 
     nb_total_eleves = len(matricules)
 
     # Préparer le filtre sur les matricules (éviter erreur SQL si liste vide)
-    placeholders = ','.join(['?'] * len(matricules)) if matricules else "'0'"
+    placeholders = ','.join(['%s'] * len(matricules)) if matricules else "'0'"
 
     # Total payé
     query_total_paye = f"""
         SELECT SUM(montant_paye) as total
         FROM paiements
-        WHERE (? = '' OR mois = ?)
-          AND (? = '' OR annee_scolaire = ?)
+        WHERE (%s = '' OR mois = %s)
+          AND (%s = '' OR annee_scolaire = %s)
           AND matricule IN ({placeholders})
     """
     params_paye = [mois, mois, annee_scolaire, annee_scolaire] + matricules
-    total_paye = cursor.execute(query_total_paye, params_paye).fetchone()['total'] or 0
+
+    cursor.execute(query_total_paye, params_paye)
+    total_paye=cursor.fetchone()['total'] or 0
 
     # Élèves ayant payé
     query_ayant_paye = f"""
         SELECT DISTINCT matricule
         FROM paiements
-        WHERE (? = '' OR mois = ?)
-          AND (? = '' OR annee_scolaire = ?)
+        WHERE (%s = '' OR mois = %s)
+          AND (%s = '' OR annee_scolaire = %s)
           AND matricule IN ({placeholders})
     """
     params_ayant_paye = [mois, mois, annee_scolaire, annee_scolaire] + matricules
-    ayant_paye = cursor.execute(query_ayant_paye, params_ayant_paye).fetchall()
+    
+    cursor.execute(query_ayant_paye, params_ayant_paye)
+    ayant_paye=cursor.fetchall()
     nb_ayant_paye = len(set([p['matricule'] for p in ayant_paye]))
 
     # Total attendu
@@ -2329,15 +2367,16 @@ def rapport_global_paiements():
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
         LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-        WHERE (? = '' OR e.classe = ?)
-          AND (? = '' OR s.nom = ?)
+        WHERE (%s = '' OR e.classe = %s)
+          AND (%s = '' OR s.nom = %s)
         GROUP BY t.montant
     """
     params_tarif = [classe, classe, section, section]
     total_attendu = 0
     nb_mois_par_annee = 8  # de Septembre à Avril
 
-    for ligne in cursor.execute(query_tarif, params_tarif).fetchall():
+    cursor.execute(query_tarif, params_tarif)
+    for ligne in cursor.fetchall():
         montant_par_eleve = ligne['montant'] or 0
         nombre_eleves = ligne['total_eleves'] or 0
 
@@ -2373,17 +2412,18 @@ def telecharger_rapport_global_paiements():
     annee_scolaire = request.args.get('annee_scolaire', '')
     print("Filtres reçus :", mois, classe, section, annee_scolaire)
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Obtenir tous les matricules filtrés
     query_eleves = """
         SELECT matricule FROM eleves
-        WHERE (? = '' OR classe = ?)
-          AND (? = '' OR section = ?)
+        WHERE (%s = '' OR classe = %s)
+          AND (%s = '' OR section = %s)
     """
-    eleves = cursor.execute(query_eleves, [classe, classe, section, section]).fetchall()
+    cursor.execute(query_eleves, [classe, classe, section, section])
+    eleves=cursor.fetchall()
+
     matricules = [e['matricule'] for e in eleves]
     nb_total_eleves = len(matricules)
 
@@ -2392,28 +2432,32 @@ def telecharger_rapport_global_paiements():
         total_paye = 0
         nb_ayant_paye = 0
     else:
-        placeholders = ','.join('?' for _ in matricules)
+        placeholders = ','.join('%s' for _ in matricules)
 
         # Total payé
         query_total_paye = f"""
             SELECT SUM(montant_paye) as total
             FROM paiements
             WHERE matricule IN ({placeholders})
-              AND (? = '' OR mois = ?)
-              AND (? = '' OR annee_scolaire = ?)
+              AND (%s = '' OR mois = %s)
+              AND (%s = '' OR annee_scolaire = %s)
         """
         params_paye = matricules + [mois, mois, annee_scolaire, annee_scolaire]
-        total_paye = cursor.execute(query_total_paye, params_paye).fetchone()['total'] or 0
+        
+        cursor.execute(query_total_paye, params_paye)
+        total_paye=cursor.fetchone()['total'] or 0
 
         # Élèves ayant payé
         query_ayant_paye = f"""
             SELECT DISTINCT matricule FROM paiements
             WHERE matricule IN ({placeholders})
-              AND (? = '' OR mois = ?)
-              AND (? = '' OR annee_scolaire = ?)
+              AND (%s = '' OR mois = %s)
+              AND (%s = '' OR annee_scolaire = %s)
         """
         params_ayant = matricules + [mois, mois, annee_scolaire, annee_scolaire]
-        ayant_paye = cursor.execute(query_ayant_paye, params_ayant).fetchall()
+      
+        cursor.execute(query_ayant_paye, params_ayant)
+        ayant_paye=cursor.fetchall()
         nb_ayant_paye = len(ayant_paye)
 
     # Total attendu
@@ -2422,14 +2466,15 @@ def telecharger_rapport_global_paiements():
     FROM eleves e
     LEFT JOIN classes c ON e.classe = c.nom
     LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-    WHERE (? = '' OR e.classe = ?)
-      AND (? = '' OR e.section = ?)
+    WHERE (%s = '' OR e.classe = %s)
+      AND (%s = '' OR e.section = %s)
     GROUP BY t.montant
     """
     params_tarif = [classe, classe, section, section]
 
     total_attendu = 0
-    for ligne in cursor.execute(query_tarif, params_tarif).fetchall():
+    cursor.execute(query_tarif, params_tarif)
+    for ligne in cursor.fetchall():
         montant_par_eleve = ligne['montant'] or 0
         total_attendu += montant_par_eleve * ligne['total_eleves']
     if annee_scolaire and mois == '':
@@ -2451,10 +2496,10 @@ def telecharger_rapport_global_paiements():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 100, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 100, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 100, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 100, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -2462,12 +2507,12 @@ def telecharger_rapport_global_paiements():
         canvas.setFont("Helvetica-Bold", 14)
         canvas.drawCentredString(largeur / 2, hauteur - 60, "RAPPORT GLOBAL DES PAIEMENTS")
         canvas.setFont("Helvetica", 12)
-        canvas.drawString(40, hauteur - 120, f"Classe : {classe or '---'}")
-        canvas.drawString(200, hauteur - 120, f"Section : {section or '---'}")
-        canvas.drawString(360, hauteur - 120, f"Mois : {mois or '---'}")
-        canvas.drawString(500, hauteur - 120, f"Année scolaire : {annee_scolaire or '---'}")
+        canvas.drawString(60, hauteur - 120, f"Classe : {classe or '---'}")
+        canvas.drawString(270, hauteur - 120, f"Section : {section or '---'}")
+        canvas.drawString(410, hauteur - 120, f"Mois : {mois or '---'}")
+        canvas.drawString(560, hauteur - 120, f"Année scolaire : {annee_scolaire or '---'}")
         canvas.setFont("Helvetica-Oblique", 10)
-        canvas.drawRightString(largeur - 40, hauteur - 30, datetime.now().strftime("%d/%m/%Y %H:%M"))
+        canvas.drawRightString(largeur - 60, hauteur - 30, datetime.now().strftime("%d/%m/%Y %H:%M"))
 
     data = [
         ["Indicateur", "Valeur"],
@@ -2477,7 +2522,7 @@ def telecharger_rapport_global_paiements():
         ["Élèves ayant payé", f"{nb_ayant_paye} / {nb_total_eleves}"]
     ]
 
-    table = Table(data, colWidths=[350, 300])
+    table = Table(data, colWidths=[400, 300])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -2488,7 +2533,7 @@ def telecharger_rapport_global_paiements():
         ('BACKGROUND', (0, 1), (-1, -1), colors.whitesmoke),
     ]))
 
-    doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=120, leftMargin=30, rightMargin=30)
+    doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=140, leftMargin=30, rightMargin=30)
     doc.build([table], onFirstPage=en_tete, onLaterPages=en_tete)
 
     return send_file(filepath, as_attachment=False)
@@ -2515,16 +2560,16 @@ def enregistrer_frais_etat():
         date_paiement = request.form['date_paiement']
         caissier = session.get('nom_utilisateur', 'Inconnu')
 
-        conn = sqlite3.connect('ecole.db')
-        cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         # Récupérer section et annee_scolaire de l'élève
-        cursor.execute("SELECT section, annee_scolaire FROM eleves WHERE matricule = ?", (matricule,))
+        cursor.execute("SELECT section, annee_scolaire FROM eleves WHERE matricule = %s", (matricule,))
         eleve_info = cursor.fetchone()
 
         if eleve_info:
-            section = eleve_info[0]
-            annee_scolaire = eleve_info[1]
+            section = eleve_info['section']
+            annee_scolaire = eleve_info['annee_scolaire']
 
             # 🔐 Vérification d'autorisation ici
             role_utilisateur = session.get('role_utilisateur', '').lower()
@@ -2535,7 +2580,7 @@ def enregistrer_frais_etat():
             # Vérifie si la même tranche a déjà été payée pour cette année scolaire
             cursor.execute("""
                 SELECT 1 FROM frais_etat 
-                WHERE matricule = ? AND tranche = ? AND annee_scolaire = ?
+                WHERE matricule = %s AND tranche = %s AND annee_scolaire = %s
             """, (matricule, tranche, annee_scolaire))
 
             deja_paye = cursor.fetchone()
@@ -2547,7 +2592,7 @@ def enregistrer_frais_etat():
             # Insertion avec l'année scolaire
             cursor.execute("""
                 INSERT INTO frais_etat (matricule, tranche, montant, date_paiement, caissier, annee_scolaire)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES (%s, %s, %s, %s, %s, %s)
             """, (matricule, tranche, montant, date_paiement, caissier, annee_scolaire))
 
             log_action("Paiement frais de l'etat enregistré", session['nom_utilisateur'])
@@ -2567,16 +2612,17 @@ def enregistrer_frais_etat():
 @login_required
 def recu_frais_etat(id):
     try:
-        conn = sqlite3.connect('ecole.db')
-        conn.row_factory = sqlite3.Row
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         # Récupérer les infos du paiement
-        frais = conn.execute("""
+        cursor.execute("""
             SELECT f.*, e.nom, e.postnom, e.prenom
             FROM frais_etat f
             JOIN eleves e ON f.matricule = e.matricule
-            WHERE f.id = ?
-        """, (id,)).fetchone()
+            WHERE f.id = %s
+        """, (id,))
+        frais = cursor.fetchone()
 
         conn.close()
 
@@ -2664,9 +2710,8 @@ def liste_frais_etat():
     caissier = request.args.get('caissier', '').strip()
     tranche = request.args.get('tranche', '').strip()
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # On commence par récupérer tous les élèves avec leur total payé, tranche et caissier du dernier paiement
     # Cette requête rassemble l'élève avec la somme des paiements et les infos du dernier paiement (tranche et caissier)
@@ -2686,13 +2731,13 @@ def liste_frais_etat():
 
     # Filtres sur eleves
     if matricule:
-        query += " AND e.matricule LIKE ?"
+        query += " AND e.matricule LIKE %s"
         params.append(f"%{matricule}%")
     if classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(classe)
     if section:
-        query += " AND e.section = ?"
+        query += " AND e.section = %s"
         params.append(section)
 
     query += " GROUP BY e.matricule"
@@ -2723,7 +2768,7 @@ def liste_frais_etat():
     conn.close()
 
     # Récupérer toutes les classes et sections pour le filtre (optionnel, à adapter selon ta base)
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT classe FROM eleves ORDER BY classe")
     classes = [row[0] for row in cursor.fetchall()]
@@ -2746,9 +2791,8 @@ def exporter_frais_etat_pdf():
     tranche = request.args.get('tranche', '').strip()
     ordre = request.args.get('ordre', '').strip().lower()  # oui, non ou vide
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = """
         SELECT e.matricule, e.nom, e.postnom, e.prenom, e.genre, e.classe, e.section,
@@ -2760,19 +2804,19 @@ def exporter_frais_etat_pdf():
     params = []
 
     if matricule:
-        query += " AND e.matricule LIKE ?"
+        query += " AND e.matricule LIKE %s"
         params.append(f"%{matricule}%")
     if classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(classe)
     if section:
-        query += " AND e.section = ?"
+        query += " AND e.section = %s"
         params.append(section)
     if tranche:
-        query += " AND (f.tranche = ? OR f.tranche IS NULL)"
+        query += " AND (f.tranche = %s OR f.tranche IS NULL)"
         params.append(tranche)
     if caissier:
-        query += " AND (f.caissier LIKE ? OR f.caissier IS NULL)"
+        query += " AND (f.caissier LIKE %s OR f.caissier IS NULL)"
         params.append(f"%{caissier}%")
 
     if ordre == "oui":
@@ -2800,7 +2844,7 @@ def exporter_frais_etat_pdf():
     styles = getSampleStyleSheet()
 
     data = [
-        ["#", "Matricule", "Nom complet", "Genre", "Section", "Classe", "Tranche", "Montant (FC)", "Date", "Caissier"]
+        ["N°", "Matricule", "Nom complet", "Genre", "Section", "Classe", "Tranche", "Montant (FC)", "Date", "Caissier"]
     ]
 
     total_montant = 0
@@ -2822,7 +2866,7 @@ def exporter_frais_etat_pdf():
             row['caissier'] if row['caissier'] else "—",
         ])
 
-    table = Table(data, colWidths=[1.5*cm, 3*cm, 5*cm, 2*cm, 3*cm, 2.5*cm, 2*cm, 3*cm, 3*cm, 3*cm])
+    table = Table(data, colWidths=[1.2*cm, 2.5*cm, 5*cm, 2*cm, 3*cm, 2.5*cm, 2*cm, 3*cm, 2*cm, 2.5*cm])
     table.setStyle(TableStyle([
         ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#003366")),
         ("TEXTCOLOR", (0, 0), (-1, 0), colors.whitesmoke),
@@ -2836,7 +2880,7 @@ def exporter_frais_etat_pdf():
 
     # Ligne total
     total_data = [["", "", "", "", "", "", "Montant total :", f"{total_montant:,.1f}", "", ""]]
-    total_table = Table(total_data, colWidths=[1.5*cm, 3*cm, 5*cm, 2*cm, 3*cm, 2.5*cm, 2*cm, 3*cm, 3*cm, 3*cm])
+    total_table = Table(total_data, colWidths=[1.2*cm, 2.5*cm, 5*cm, 2*cm, 3*cm, 2.5*cm, 2*cm, 3*cm, 2*cm, 2.5*cm])
     total_table.setStyle(TableStyle([
         ("SPAN", (0, 0), (6, 0)),
         ("BACKGROUND", (0, 0), (-1, -1), colors.lightgrey),
@@ -2850,10 +2894,10 @@ def exporter_frais_etat_pdf():
         # 🔹 Images gauche et droite
         try:
             logo_gauche = ImageReader("static/logo1.jpg")
-            canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
             logo_droit = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+            canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
@@ -2862,15 +2906,15 @@ def exporter_frais_etat_pdf():
         canvas.drawCentredString(largeur / 2, hauteur - 60, "Liste des élèves - Frais de l'État")
 
         canvas.setFont("Helvetica", 9)
-        canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+        canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
         canvas.setFont("Helvetica", 12)
         y = hauteur - 100
-        canvas.drawString(30, y, f"Matricule : {matricule or ''}")
+        canvas.drawString(60, y, f"Matricule : {matricule or ''}")
         canvas.drawString(180, y, f"Classe : {classe or ''}")
-        canvas.drawString(330, y, f"Section : {section or ''}")
-        canvas.drawString(480, y, f"Caissier : {caissier or ''}")
-        canvas.drawString(680, y, f"Ordre : {ordre.capitalize() if ordre else ''}")
+        canvas.drawString(380, y, f"Section : {section or ''}")
+        canvas.drawString(510, y, f"Caissier : {caissier or ''}")
+        canvas.drawString(650, y, f"Ordre : {ordre.capitalize() if ordre else ''}")
         canvas.restoreState()
 
     doc = SimpleDocTemplate(filepath, pagesize=landscape(A4),
@@ -2885,9 +2929,8 @@ def exporter_frais_etat_pdf():
 def ajouter_achat_article():
     
     if request.method == 'POST':
-        conn = sqlite3.connect("ecole.db")
-        conn.row_factory = sqlite3.Row
-        cursor = conn.cursor()
+        conn = get_db_connection()
+        cursor = conn.cursor(dictionary=True)
 
         matricule = request.form['matricule']
         code_article = request.form['code_article']
@@ -2895,11 +2938,11 @@ def ajouter_achat_article():
         prix_unitaire = float(request.form['prix_unitaire'])
         total = quantite * prix_unitaire
         date_achat = request.form['date_achat']
-        caissier = request.form['caissier']
-        cursor.execute("SELECT section FROM eleves WHERE matricule = ?", (matricule,))
+        caissier = session.get('nom_utilisateur', 'Inconnu')
+        cursor.execute("SELECT section FROM eleves WHERE matricule = %s", (matricule,))
         section_row = cursor.fetchone()
         if section_row:
-            section = section_row[0]
+            section = section_row['section']
 
                 # 🔐 Vérification d'autorisation ici
             role_utilisateur = session.get('role_utilisateur', '').lower()
@@ -2908,7 +2951,7 @@ def ajouter_achat_article():
                 return redirect(url_for('ajouter_achat_article'))
         cursor.execute("""
             INSERT INTO achats_articles (matricule, code_article, quantite, prix_unitaire, total, date_achat, caissier)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
         """, (matricule, code_article, quantite, prix_unitaire, total, date_achat, caissier))
         log_action("Vente Articles enregistré", session['nom_utilisateur'])
         conn.commit()
@@ -2919,11 +2962,11 @@ def ajouter_achat_article():
         return redirect(url_for('ajouter_achat_article'))
 
     # Cas GET : on affiche le formulaire
-    conn = sqlite3.connect("ecole.db")
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
-    articles = cursor.execute("SELECT code, nom, prix FROM articles").fetchall()
+    cursor.execute("SELECT code, nom, prix FROM articles")
+    articles=cursor.fetchall()
     caissier_nom = session.get('nom_utilisateur', '')
 
     conn.close()
@@ -2944,9 +2987,8 @@ def historique_achats():
     filtre_caissier = request.args.get('caissier', '').strip()
     filtre_article = request.args.get('article', '').strip()
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Requête dynamique avec filtres
     query = """
@@ -2959,29 +3001,35 @@ def historique_achats():
     params = []
 
     if filtre_matricule:
-        query += " AND aa.matricule LIKE ?"
+        query += " AND aa.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
     if filtre_section:
-        query += " AND e.section = ?"
+        query += " AND e.section = %s"
         params.append(filtre_section)
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
     if filtre_caissier:
-        query += " AND aa.caissier LIKE ?"
+        query += " AND aa.caissier LIKE %s"
         params.append(f"%{filtre_caissier}%")
     if filtre_article:
-        query += " AND a.nom LIKE ?"
+        query += " AND a.nom LIKE %s"
         params.append(f"%{filtre_article}%")
 
     query += " ORDER BY aa.date_achat DESC"
 
-    achats = cursor.execute(query, params).fetchall()
+    cursor.execute(query, params)
+    achats=cursor.fetchall()
 
     # Pour les listes déroulantes de filtres, récupérer les valeurs uniques
-    sections = [row[0] for row in cursor.execute("SELECT DISTINCT section FROM eleves").fetchall()]
-    classes = [row[0] for row in cursor.execute("SELECT DISTINCT classe FROM eleves").fetchall()]
-    articles = cursor.execute("SELECT code, nom FROM articles").fetchall()
+    cursor.execute("SELECT DISTINCT section FROM eleves")
+    sections = [row['section'] for row in cursor.fetchall()]
+
+    cursor.execute("SELECT DISTINCT classe FROM eleves")
+    classes = [row['classe'] for row in cursor.fetchall()]
+
+    cursor.execute("SELECT code, nom FROM articles")
+    articles = cursor.fetchall()  # liste de dicts
 
     conn.close()
 
@@ -3005,9 +3053,8 @@ def exporter_historique_achats_pdf():
     filtre_caissier = request.args.get('caissier', '').strip()
     filtre_article = request.args.get('article', '').strip()
 
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     query = """
         SELECT aa.*, e.nom, e.postnom, e.prenom, e.section, e.classe, a.nom AS nom_article
@@ -3019,24 +3066,27 @@ def exporter_historique_achats_pdf():
     params = []
 
     if filtre_matricule:
-        query += " AND aa.matricule LIKE ?"
+        query += " AND aa.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
     if filtre_section:
-        query += " AND e.section = ?"
+        query += " AND e.section = %s"
         params.append(filtre_section)
     if filtre_classe:
-        query += " AND e.classe = ?"
+        query += " AND e.classe = %s"
         params.append(filtre_classe)
     if filtre_caissier:
-        query += " AND aa.caissier LIKE ?"
+        query += " AND aa.caissier LIKE %s"
         params.append(f"%{filtre_caissier}%")
     if filtre_article:
-        query += " AND a.nom LIKE ?"
+        query += " AND a.nom LIKE %s"
         params.append(f"%{filtre_article}%")
 
     query += " ORDER BY aa.date_achat DESC"
 
-    achats = cursor.execute(query, params).fetchall()
+    
+    cursor.execute(query, params)
+    achats=cursor.fetchall()
+
     conn.close()
 
     if not achats:
@@ -3044,14 +3094,14 @@ def exporter_historique_achats_pdf():
 
     # Préparation PDF
     if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+        os.makedirs("recus_minerval")
 
     filepath = os.path.join("reçus_minerval", "historique_achats.pdf")
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
 
     data = [
-        ["#", "Matricule", "Nom complet", "Section", "Classe", "Article",
+        ["N°", "Matricule", "Nom complet", "Section", "Classe", "Article",
          "Quantité", "Prix unitaire ($)", "Total ($)", "Date achat", "Caissier"]
     ]
 
@@ -3059,7 +3109,8 @@ def exporter_historique_achats_pdf():
 
     for i, achat in enumerate(achats, start=1):
         nom_complet = f"{achat['nom']} {achat['postnom']} {achat['prenom']}"
-        total_general += float(achat['total'])
+        total_general += float(achat.get('total', 0) or 0)
+
 
         data.append([
             str(i),
@@ -3101,10 +3152,10 @@ def exporter_historique_achats_pdf():
             # 🔹 Images gauche et droite
             try:
                 logo_gauche = ImageReader("static/logo1.jpg")
-                canvas.drawImage(logo_gauche, 30, hauteur - 80, width=60, height=60, mask='auto')
+                canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
                 logo_droit = ImageReader("static/logo.jpg")
-                canvas.drawImage(logo_droit, largeur - 90, hauteur - 80, width=60, height=60, mask='auto')
+                canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
             except:
                 pass
             canvas.setFont("Helvetica-Bold", 16)
@@ -3112,14 +3163,14 @@ def exporter_historique_achats_pdf():
             canvas.setFont("Helvetica-Bold", 14)
             canvas.drawCentredString(largeur / 2, hauteur - 60, "Historique des achats d'articles")
             canvas.setFont("Helvetica", 9)
-            canvas.drawRightString(largeur - 30, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
+            canvas.drawRightString(largeur - 60, hauteur - 15, f"Date : {datetime.now().strftime('%d/%m/%Y %H:%M')}")
 
             y = hauteur - 100
             canvas.setFont("Helvetica", 12)
-            canvas.drawString(30, y, f"Matricule : {filtres['matricule'] or '---'}")
+            canvas.drawString(60, y, f"Matricule : {filtres['matricule'] or '---'}")
             canvas.drawString(180, y, f"Classe : {filtres['classe'] or '---'}")
-            canvas.drawString(330, y, f"Section : {filtres['section'] or '---'}")
-            canvas.drawString(480, y, f"Caissier : {filtres['caissier'] or '---'}")
+            canvas.drawString(390, y, f"Section : {filtres['section'] or '---'}")
+            canvas.drawString(520, y, f"Caissier : {filtres['caissier'] or '---'}")
             canvas.drawString(680, y, f"Article : {filtres['article'] or '---'}")
             canvas.restoreState()
         return inner
@@ -3152,17 +3203,21 @@ def parametres():
 @app.route('/ajouter_article', methods=['GET', 'POST'])
 @login_required
 def ajouter_article():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
         code = request.form['code']
         nom = request.form['nom']
         prix = request.form['prix']
+        try:
+            prix_float = float(prix)
+        except ValueError:
+            flash("Le prix doit être un nombre valide.", "danger")
+            return redirect(url_for('ajouter_article'))
 
         # Enregistrement dans la base
-        cursor.execute("INSERT INTO articles (code, nom, prix) VALUES (?, ?, ?)", (code, nom, prix))
+        cursor.execute("INSERT INTO articles (code, nom, prix) VALUES (%s, %s, %s)", (code, nom, prix_float))
         conn.commit()
         log_action("Ajout article  enregistré", session['nom_utilisateur'])
     # Récupérer tous les articles pour affichage
@@ -3175,9 +3230,9 @@ def ajouter_article():
 @app.route('/supprimer_article/<int:article_id>')
 @login_required
 def supprimer_article(article_id):
-    conn = sqlite3.connect('ecole.db')
-    cursor = conn.cursor()
-    cursor.execute("DELETE FROM articles WHERE id = ?", (article_id,))
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
     log_action("suppression article enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
@@ -3186,9 +3241,8 @@ def supprimer_article(article_id):
 @app.route('/parametres/classes', methods=['GET', 'POST'])
 @login_required
 def gerer_classes():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # Récupérer toutes les sections pour le select
     cursor.execute("SELECT * FROM sections ORDER BY nom")
@@ -3199,9 +3253,9 @@ def gerer_classes():
         section_id = request.form.get('section_id')
         if nom_classe and section_id:
             # Vérifier doublon sur nom et section (optionnel)
-            cursor.execute("SELECT id FROM classes WHERE nom = ? AND section_id = ?", (nom_classe, section_id))
+            cursor.execute("SELECT id FROM classes WHERE nom = %s AND section_id = %s", (nom_classe, section_id))
             if not cursor.fetchone():
-                cursor.execute("INSERT INTO classes (nom, section_id) VALUES (?, ?)", (nom_classe, section_id))
+                cursor.execute("INSERT INTO classes (nom, section_id) VALUES (%s, %s)", (nom_classe, section_id))
                 conn.commit()
 
     # Récupérer classes avec nom de section jointe
@@ -3221,20 +3275,21 @@ def gerer_classes():
 @app.route('/parametres/classes/supprimer/<int:classe_id>')
 @login_required
 def supprimer_classe(classe_id):
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM classes WHERE id = ?", (classe_id,))
+    cursor.execute("DELETE FROM classes WHERE id = %s", (classe_id,))
     log_action("Suppression classe  enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
     return redirect(url_for('gerer_classes'))
 
+from werkzeug.security import generate_password_hash
+
 @app.route('/utilisateurs', methods=['GET', 'POST'])
 @login_required
 def utilisateurs():
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     if request.method == 'POST':
         nom = request.form['nom'].strip()
@@ -3242,12 +3297,14 @@ def utilisateurs():
         mot_de_passe = request.form['mot_de_passe'].strip()
         role = request.form['role']
 
-        # 💡 Tu peux plus tard crypter ce mot de passe
+        # Hachage du mot de passe
+        mot_de_passe_hache = generate_password_hash(mot_de_passe)
+
         cursor.execute("""
             INSERT INTO utilisateurs (nom, prenom, mot_de_passe, role)
-            VALUES (?, ?, ?, ?)
-        """, (nom, prenom, mot_de_passe, role))
-        log_action("Ajout utilisateur  enregistré", session['nom_utilisateur'])
+            VALUES (%s, %s, %s, %s)
+        """, (nom, prenom, mot_de_passe_hache, role))
+        log_action("Ajout utilisateur enregistré", session['nom_utilisateur'])
         conn.commit()
 
     cursor.execute("SELECT * FROM utilisateurs ORDER BY nom")
@@ -3255,12 +3312,13 @@ def utilisateurs():
     conn.close()
     return render_template("utilisateurs.html", utilisateurs=utilisateurs)
 
+
 @app.route('/supprimer_utilisateur/<int:id>')
 @login_required
 def supprimer_utilisateur(id):
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cursor = conn.cursor()
-    cursor.execute("DELETE FROM utilisateurs WHERE id = ?", (id,))
+    cursor.execute("DELETE FROM utilisateurs WHERE id = %s", (id,))
     log_action("Suppression utilisateur  enregistré", session['nom_utilisateur'])
     conn.commit()
     conn.close()
@@ -3279,9 +3337,9 @@ def imprimer_pdf():
 
 
 def get_eleve_by_matricule(matricule):
-    conn = sqlite3.connect('ecole.db')
+    conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = ?", (matricule,))
+    cur.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = %s", (matricule,))
     row = cur.fetchone()
     conn.close()
     if row:
@@ -3299,12 +3357,12 @@ def get_situation_minerval(matricule, annee_scolaire):
     mois_list = ['Septembre', 'Octobre', 'Novembre', 'Décembre', 'Janvier', 'Février', 'Mars', 'Avril']
     situation = {}
 
-    conn = sqlite3.connect('ecole.db')
-    cur = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     # 1. Récupérer la classe de l'élève
-    cur.execute("SELECT classe FROM eleves WHERE matricule = ?", (matricule,))
-    result = cur.fetchone()
+    cursor.execute("SELECT classe FROM eleves WHERE matricule = %s", (matricule,))
+    result = cursor.fetchone()
     if not result:
         conn.close()
         return {mois: "Non payé" for mois in mois_list}  # Élève introuvable
@@ -3312,8 +3370,8 @@ def get_situation_minerval(matricule, annee_scolaire):
     classe_nom = result[0]
 
     # 2. Trouver l'ID de la classe
-    cur.execute("SELECT id FROM classes WHERE nom = ?", (classe_nom,))
-    result = cur.fetchone()
+    cursor.execute("SELECT id FROM classes WHERE nom = %s", (classe_nom,))
+    result = cursor.fetchone()
     if not result:
         conn.close()
         return {mois: "Non payé" for mois in mois_list}  # Classe introuvable
@@ -3321,18 +3379,18 @@ def get_situation_minerval(matricule, annee_scolaire):
     classe_id = result[0]
 
     # 3. Récupérer le tarif du minerval pour cette classe
-    cur.execute("SELECT montant FROM tarifs WHERE classe_id = ? AND type = 'minerval'", (classe_id,))
-    result = cur.fetchone()
+    cursor.execute("SELECT montant FROM tarifs WHERE classe_id = %s AND type = 'minerval'", (classe_id,))
+    result = cursor.fetchone()
     montant_a_payer = result[0] if result else 0
 
     # 4. Boucle sur les mois
     for mois in mois_list:
-        cur.execute("""
+        cursor.execute("""
             SELECT SUM(montant_paye) 
             FROM paiements 
-            WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+            WHERE matricule = %s AND mois = %s AND annee_scolaire = %s
         """, (matricule, mois, annee_scolaire))
-        result = cur.fetchone()
+        result = cursor.fetchone()
         total_paye = result[0] or 0
 
         # Comparaison intelligente
@@ -3351,16 +3409,16 @@ def get_situation_minerval(matricule, annee_scolaire):
 def get_situation_frais_etat(matricule, annee_scolaire):
     situation = {"Tranche 1": "Non payé", "Tranche 2": "Non payé"}
 
-    conn = sqlite3.connect('ecole.db')
-    cur = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor()
 
     # Récupérer toutes les lignes payées (>0) pour cet élève et année scolaire
-    cur.execute("""
+    cursor.execute("""
         SELECT tranche, montant FROM frais_etat
-        WHERE matricule = ? AND annee_scolaire = ? AND montant > 0
+        WHERE matricule =  %s AND annee_scolaire = %s AND montant > 0
     """, (matricule, annee_scolaire))
 
-    rows = cur.fetchall()
+    rows = cursor.fetchall()
 
     for tranche, montant in rows:
         if tranche in situation:
@@ -3403,12 +3461,14 @@ def situation_eleve():
 @app.route('/telecharger_situation_eleve/<matricule>/<annee_scolaire>')
 @login_required
 def telecharger_situation_eleve(matricule, annee_scolaire):
-    conn = sqlite3.connect('ecole.db')
-    conn.row_factory = sqlite3.Row
-    cursor = conn.cursor()
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
 
     # ✅ Récupérer les infos de l'élève
-    eleve = cursor.execute("SELECT * FROM eleves WHERE matricule = ?", (matricule,)).fetchone()
+  
+    cursor.execute("SELECT * FROM eleves WHERE matricule = %s", (matricule,))
+    eleve=cursor.fetchone()
+
     if not eleve:
         return "Élève introuvable", 404
 
@@ -3419,7 +3479,7 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         cursor.execute("""
             SELECT SUM(montant_paye) as total
             FROM paiements
-            WHERE matricule = ? AND mois = ? AND annee_scolaire = ?
+            WHERE matricule = %s AND mois = %s AND annee_scolaire = %s
         """, (matricule, mois, annee_scolaire))
         total = cursor.fetchone()['total'] or 0
 
@@ -3427,7 +3487,7 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
             SELECT montant
             FROM tarifs
             JOIN classes ON classes.id = tarifs.classe_id
-            WHERE classes.nom = ? AND type = 'minerval'
+            WHERE classes.nom = %s AND type = 'minerval'
         """, (eleve['classe'],))
         tarif = cursor.fetchone()
         montant_tarif = tarif['montant'] if tarif else 0
@@ -3446,7 +3506,7 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
     for tranche in ["Tranche 1", "Tranche 2"]:
         cursor.execute("""
             SELECT montant FROM frais_etat
-            WHERE matricule = ? AND tranche = ? AND annee_scolaire = ?
+            WHERE matricule = %s AND tranche = %s AND annee_scolaire = %s
         """, (matricule, tranche, annee_scolaire))
         ligne = cursor.fetchone()
         montant = ligne['montant'] if ligne else 0

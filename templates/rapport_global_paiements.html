@@ -32,7 +32,7 @@
             padding: 6px 18px;
             border: none;
             text-decoration: none;
-            margin-left: 1190px;
+            margin-left: 510px;
           }
 
           .btn-outline-dark:hover{
@@ -105,7 +105,9 @@
             class="btn btn-success w-100 rounded-pill" target="_blank" style="background-color:#114199;">
                 <i class="fa fa-file-pdf me-1"></i> Imprimer le rapport
             </a>
-
+            <a href="{{ url_for('gestion_minerval') }}" class="btn btn-outline-dark rounded-pill">
+                <i class="fa-solid fa-arrow-left me-1"></i> Retour
+            </a>
         </div>
     </form>
 
@@ -140,8 +142,5 @@
     {% endif %}
  
 </div>
-<a href="{{ url_for('gestion_minerval') }}" class="btn btn-outline-dark rounded-pill">
-        <i class="fa-solid fa-arrow-left me-1"></i> Retour
-</a>
 </body>
 </html>

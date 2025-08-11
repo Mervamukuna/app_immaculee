@@ -220,3 +220,114 @@
 [2025-07-21 21:20:02] Lombe Father : Acces gestion minerval enregistré
 [2025-07-21 21:21:11] Lombe Father : Acces gestion minerval enregistré
 [2025-07-21 21:21:31] Lombe Father : Acces gestion minerval enregistré
+[2025-07-22 23:19:52] Lombe Father : Connexion réussie
+[2025-07-22 23:20:33] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-22 23:20:35] Lombe Father : Acces gestion minerval enregistré
+[2025-07-22 23:21:32] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-22 23:21:38] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 08:53:18] Lombe Father : Connexion réussie
+[2025-07-23 08:53:52] Lombe Father : Connexion réussie
+[2025-07-23 09:31:49] Lombe Father : Connexion réussie
+[2025-07-23 09:35:11] Lombe Father : inscription enregistré
+[2025-07-23 09:38:22] Lombe Father : inscription enregistré
+[2025-07-23 09:41:22] Lombe Father : inscription enregistré
+[2025-07-23 09:45:39] Lombe Father : Telechargement liste enregistré
+[2025-07-23 09:48:00] Lombe Father : Modification eleve enregistré
+[2025-07-23 09:49:17] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 09:55:59] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 09:56:06] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 09:56:13] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 10:47:37] Lombe Father : Connexion réussie
+[2025-07-23 10:52:02] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 10:54:35] Lombe Father : Paiement enregistré
+[2025-07-23 10:55:03] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 10:55:13] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 10:55:24] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 10:55:41] Lombe Father : Paiement enregistré
+[2025-07-23 10:55:49] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:00:11] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:04:20] Lombe Father : Finalisation Paiement enregistré
+[2025-07-23 11:04:49] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:04:56] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:07:25] Lombe Father : Finalisation Paiement enregistré
+[2025-07-23 11:07:59] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:23:44] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:33:32] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:36:51] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:38:49] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:39:02] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:44:49] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:46:07] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:46:34] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:46:45] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:46:56] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:47:04] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:49:38] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:51:40] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 11:51:50] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:53:41] Lombe Father : Paiement frais de l'etat enregistré
+[2025-07-23 11:56:39] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:56:53] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:57:40] Lombe Father : Ajout article  enregistré
+[2025-07-23 11:57:44] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:57:55] Lombe Father : Vente Articles enregistré
+[2025-07-23 11:58:04] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:58:07] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 11:59:46] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-07-23 12:07:48] Lombe Father : Connexion réussie
+[2025-07-23 12:10:33] Lombe Father : Ajout classe  enregistré
+[2025-07-23 12:10:54] Lombe Father : Ajout classe  enregistré
+[2025-07-23 12:10:59] Lombe Father : Suppression classe  enregistré
+[2025-07-23 12:10:59] Lombe Father : Ajout classe  enregistré
+[2025-07-23 12:12:08] Lombe Father : Ajout utilisateur enregistré
+[2025-07-23 12:12:54] Lombe Father : Changement de mot de passe
+[2025-07-23 12:13:56] Lombe Father : Connexion réussie
+[2025-07-23 12:14:18] Banza Yvonne : Connexion réussie
+[2025-07-23 12:14:56] Lombe Father : Connexion réussie
+[2025-07-23 12:15:02] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 12:15:18] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 12:15:28] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 12:16:02] Lombe Father : Acces gestion minerval enregistré
+[2025-07-23 12:16:08] Banza Yvonne : Connexion réussie
+[2025-07-23 12:16:12] Banza Yvonne : Acces gestion minerval enregistré
+[2025-07-23 12:16:41] Banza Yvonne : Acces gestion minerval enregistré
+[2025-07-23 12:20:52] Banza Yvonne : Acces menu_frais_et_stock enregistré
+[2025-07-23 12:20:55] Banza Yvonne : Acces menu_frais_et_stock enregistré
+[2025-07-23 12:21:00] Banza Yvonne : Acces gestion minerval enregistré
+[2025-07-23 12:21:13] Banza Yvonne : Acces gestion minerval enregistré
+[2025-08-04 11:26:52] Lombe Father : Connexion réussie
+[2025-08-04 11:27:19] Lombe Father : Suppression utilisateur  enregistré
+[2025-08-04 11:49:49] Lombe Father : Connexion réussie
+[2025-08-04 11:50:11] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-04 11:51:50] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-04 11:51:59] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 12:14:00] Lombe Father : Telechargement liste enregistré
+[2025-08-04 12:15:45] Lombe Father : Telechargement liste enregistré
+[2025-08-04 12:42:32] Lombe Father : Connexion réussie
+[2025-08-04 15:45:39] Lombe Father : Ajout classe  enregistré
+[2025-08-04 15:46:26] Lombe Father : Ajout classe  enregistré
+[2025-08-04 15:46:50] Lombe Father : Ajout classe  enregistré
+[2025-08-04 15:47:22] Lombe Father : Ajout classe  enregistré
+[2025-08-04 15:47:41] Lombe Father : Ajout classe  enregistré
+[2025-08-04 15:48:33] Lombe Father : Telechargement liste enregistré
+[2025-08-04 16:04:19] Lombe Father : Telechargement liste enregistré
+[2025-08-04 16:06:12] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:25:25] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:32:35] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:32:53] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:33:10] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:43:48] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:45:58] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:46:00] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:46:11] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:46:22] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 16:49:42] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 17:06:52] Lombe Father : Acces gestion minerval enregistré
+[2025-08-04 17:06:56] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-04 17:20:23] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-04 17:34:29] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-11 11:14:18] Lombe Father : Connexion réussie
+[2025-08-11 11:14:36] Lombe Father : Connexion réussie
+[2025-08-11 11:15:08] Lombe Father : Acces gestion minerval enregistré
+[2025-08-11 11:15:09] Lombe Father : Acces menu_frais_et_stock enregistré
+[2025-08-11 11:54:16] Lombe Father : Connexion réussie
