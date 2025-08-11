@@ -1,4 +1,4 @@
-import mariadb
+
 import sys
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, session, flash, send_from_directory
 from reportlab.lib.pagesizes import letter, A5, A6, landscape, A4
