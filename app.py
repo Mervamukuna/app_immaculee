@@ -1,4 +1,4 @@
-
+import mariadb
 import sys
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, session, flash, send_from_directory
 from reportlab.lib.pagesizes import letter, A5, A6, landscape, A4
@@ -46,64 +46,35 @@ def verifier_autorisation(section_cible):
     flash("⛔ Accès refusé : vous n'êtes pas autorisé à gérer cette section.", "danger")
     return False
 
-import os
-from urllib.parse import urlparse
-import pymysql
-from flask import Flask
-import sys
-
+#Creation de l'application Flask
 app = Flask(__name__)
-app.secret_key = 'abc123xyz'
+app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
-# Récupérer la variable d'environnement
-db_url = os.getenv('SCALINGO_MYSQL_URL')
-if not db_url:
-    print("❌ La variable d'environnement SCALINGO_MYSQL_URL n'est pas définie.")
-    sys.exit(1)
-
-# Parser l'URL pour extraire user, password, host, port, db
-result = urlparse(db_url)
-
-DB_USER = result.username
-DB_PASSWORD = result.password
-DB_HOST = result.hostname
-DB_PORT = result.port
-DB_NAME = result.path.lstrip('/')
-
-print(f"DEBUG: Connexion à la base {DB_NAME} sur {DB_HOST}:{DB_PORT} avec user {DB_USER}")
-
-# Test initial de connexion au démarrage (facultatif, mais utile)
 try:
-    conn = pymysql.connect(
-        user=DB_USER,
-        password=DB_PASSWORD,
-        host=DB_HOST,
-        port=DB_PORT,
-        database=DB_NAME,
-        ssl={"ssl": True, "ssl_verify_cert": False}
+    conn = mariadb.connect(
+        user="gestion_eleves_user",
+        password="Gestion2025.",
+        host="localhost",
+        port=3306,
+        database="gestion_eleves_db"
     )
     print("✅ Connexion réussie à la base de données !")
-    conn.close()
-except pymysql.Error as e:
+except mariadb.Error as e:
     print(f"❌ Erreur de connexion à la base de données : {e}")
     sys.exit(1)
 
-# Fonction pour obtenir une nouvelle connexion quand on en a besoin
 def get_db_connection():
     try:
-        conn = pymysql.connect(
-            host=DB_HOST,
-            user=DB_USER,
-            password=DB_PASSWORD,
-            port=DB_PORT,
-            database=DB_NAME,
-            ssl={"ssl": True, "ssl_verify_cert": False}
+        conn = mariadb.connect(
+            host="localhost",
+            user="gestion_eleves_user",
+            password="Gestion2025.",
+            database="gestion_eleves_db"
         )
         return conn
-    except pymysql.Error as e:
+    except mariadb.Error as e:
         print(f"Erreur de connexion à la base de données : {e}")
         return None
-
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):

@@ -331,3 +331,7 @@
 [2025-08-11 11:15:08] Lombe Father : Acces gestion minerval enregistré
 [2025-08-11 11:15:09] Lombe Father : Acces menu_frais_et_stock enregistré
 [2025-08-11 11:54:16] Lombe Father : Connexion réussie
+[2025-08-12 17:33:55] Lombe Father : Connexion réussie
+[2025-08-12 17:38:28] Lombe Father : Connexion réussie
+[2025-08-12 17:38:33] Lombe Father : Acces gestion minerval enregistré
+[2025-08-12 17:38:51] Lombe Father : Acces gestion minerval enregistré
