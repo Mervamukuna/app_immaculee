@@ -409,15 +409,27 @@ def inscription():
                 c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
             except:
                 pass
+            from PIL import Image
+
+            # Chemin vers le filigrane original
+            chemin_original = os.path.join(DOSSIER_STATIC, "logo2.png")
+            # Chemin vers le filigrane réduit
+            chemin_reduit = os.path.join(DOSSIER_STATIC, "logo2_small.jpg")
+
+            # Redimensionner et compresser
+            im = Image.open(chemin_original)
+            im = im.resize((200, 100))  # largeur=200px, hauteur=100px
+            im.save(chemin_reduit, "JPEG", quality=70)  # qualité 70 pour alléger
             # Filigrane
-            #try:
-                    #logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.png"))
-                    #c.saveState()
-                    #c.setFillAlpha(0.1)
-                    #c.drawImage(logo, 50, 150, width=150, height=100, preserveAspectRatio=True, mask='auto')
-                    #c.restoreState()
-            #except:
-                    #pass
+            try:
+                # Remplacer par le filigrane réduit
+                logo = ImageReader(chemin_reduit)
+                c.saveState()
+                c.setFillAlpha(0.1)
+                c.drawImage(logo, 50, 150, width=200, height=100, preserveAspectRatio=True, mask='auto')
+                c.restoreState()
+            except:
+                pass
 
             # Texte
             c.setFont("Helvetica-Bold", 13)
