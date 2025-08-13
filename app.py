@@ -426,7 +426,7 @@ def inscription():
                 logo = ImageReader(chemin_reduit)
                 c.saveState()
                 c.setFillAlpha(0.1)
-                c.drawImage(logo, 50, 150, width=200, height=100, preserveAspectRatio=True, mask='auto')
+                c.drawImage(logo, 50, 150, width=200, height=200, preserveAspectRatio=True, mask='auto')
                 c.restoreState()
             except:
                 pass
