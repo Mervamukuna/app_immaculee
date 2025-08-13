@@ -56,8 +56,6 @@ app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 # Dossier pour les reçus
 DOSSIER_RECUS = os.path.join(BASE_DIR, "recus")
-if not os.path.exists(DOSSIER_RECUS):
-    os.makedirs(DOSSIER_RECUS)
 
 DOSSIER_STATIC = os.path.join(BASE_DIR,"static")
 
@@ -959,7 +957,9 @@ def recu_paiement(id):
         montant_restant = float(paiement['montant_a_payer']) - float(paiement['montant_paye'])
         filename = f"recu_paiement_{paiement['matricule']}_{paiement['mois']}.pdf"
         filepath = os.path.join(DOSSIER_RECUS, filename)
-        
+        if not os.path.exists(DOSSIER_RECUS):
+            os.makedirs(DOSSIER_RECUS)
+
         c = canvas.Canvas(filepath, pagesize=A6)
 
         try:
