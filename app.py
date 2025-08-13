@@ -411,10 +411,10 @@ def inscription():
                 pass
             # Filigrane
             try:
-                    logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
+                    logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.png"))
                     c.saveState()
-                    c.setFillAlpha(0.08)
-                    c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
+                    c.setFillAlpha(0.1)
+                    c.drawImage(logo, 50, 150, width=240, height=240, preserveAspectRatio=True, mask='auto')
                     c.restoreState()
             except:
                     pass
