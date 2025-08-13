@@ -70,7 +70,7 @@ def get_db_connection():
             password="Gestion2025.",
             database="mervabangi$gestion_eleves_db"
         )
-cursorclass=pymysql.cursors.DictCursor
+
         return conn
     except pymysql.Error as e:
         print(f"Erreur de connexion à la base de données : {e}")
