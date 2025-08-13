@@ -929,7 +929,7 @@ def recu_paiement(id):
         return redirect(url_for('gestion_minerval'))  # Ou vers une page où il peut juste consulter
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("""
             SELECT p.*, e.nom, e.postnom, e.prenom, e.genre, e.classe 
             FROM paiements p
@@ -1008,7 +1008,7 @@ def recu_paiement(id):
 @login_required
 def infos_eleve(matricule):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Rechercher l'élève
     cursor.execute("SELECT nom, postnom, prenom, genre, section, classe, annee_scolaire FROM eleves WHERE matricule = %s", (matricule,))
@@ -1183,7 +1183,7 @@ def telecharger_historique_paiement():
     filtre_caissier = request.args.get('filtre_caissier', '')
 
     conn = conn = conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Requête SQL dynamique avec filtres
     query = """
@@ -1321,7 +1321,7 @@ def telecharger_historique_paiement():
 @login_required
 def eleves_non_en_ordre():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Récupération des valeurs uniques pour les filtres
     cursor.execute("SELECT DISTINCT classe FROM eleves")
@@ -1403,7 +1403,7 @@ def telecharger_non_en_ordre():
     filtre_mois = request.args.get('filtre_mois', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     query = """
         SELECT e.nom, e.postnom, e.prenom, e.matricule, e.classe, e.section,
@@ -1526,7 +1526,7 @@ def recu_finalisation(matricule, mois):
 def finaliser_paiement(matricule, mois):
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # 🔍 Récupérer le paiement partiel existant
     cursor.execute("""
@@ -1677,7 +1677,7 @@ def finaliser_paiement(matricule, mois):
 @login_required
 def eleves_en_ordre():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     filtre_matricule = ''
     filtre_classe = ''
@@ -1753,7 +1753,7 @@ def telecharger_eleves_en_ordre():
     filtre_caissier = request.args.get('filtre_caissier', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Requête SQL dynamique avec filtres
     query = """
@@ -1885,7 +1885,7 @@ def eleves_sans_paiement():
     mois_disponibles = [ "Septembre", "Octobre", "Novembre", "Décembre","Janvier", "Février", "Mars", "Avril"]
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # 📌 Récupérer toutes les classes pour la sélection
     cursor.execute("SELECT DISTINCT classe FROM eleves")
@@ -1935,7 +1935,7 @@ def telecharger_sans_paiement():
     filtre_mois = request.args.get('filtre_mois', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Tous les élèves
     cursor.execute("SELECT * FROM eleves")
@@ -2047,7 +2047,7 @@ def statistiques_paiements():
     annee_scolaire = request.args.get('annee_scolaire', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Requête principale avec ajout de nb_ayant_paye
     query = """
@@ -2141,7 +2141,7 @@ def telecharger_statistiques_paiements():
     annee_scolaire = request.args.get('annee_scolaire', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     query = """
         SELECT 
@@ -2286,7 +2286,7 @@ def rapport_global_paiements():
     annee_scolaire = request.args.get('annee_scolaire', '')
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Récupérer les classes disponibles pour dropdown
     cursor.execute("SELECT DISTINCT classe FROM eleves")
@@ -2400,7 +2400,7 @@ def telecharger_rapport_global_paiements():
     print("Filtres reçus :", mois, classe, section, annee_scolaire)
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Obtenir tous les matricules filtrés
     query_eleves = """
@@ -2548,7 +2548,7 @@ def enregistrer_frais_etat():
         caissier = session.get('nom_utilisateur', 'Inconnu')
 
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         # Récupérer section et annee_scolaire de l'élève
         cursor.execute("SELECT section, annee_scolaire FROM eleves WHERE matricule = %s", (matricule,))
@@ -2600,7 +2600,7 @@ def enregistrer_frais_etat():
 def recu_frais_etat(id):
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         # Récupérer les infos du paiement
         cursor.execute("""
@@ -2698,7 +2698,7 @@ def liste_frais_etat():
     tranche = request.args.get('tranche', '').strip()
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # On commence par récupérer tous les élèves avec leur total payé, tranche et caissier du dernier paiement
     # Cette requête rassemble l'élève avec la somme des paiements et les infos du dernier paiement (tranche et caissier)
@@ -2779,7 +2779,7 @@ def exporter_frais_etat_pdf():
     ordre = request.args.get('ordre', '').strip().lower()  # oui, non ou vide
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     query = """
         SELECT e.matricule, e.nom, e.postnom, e.prenom, e.genre, e.classe, e.section,
@@ -2917,7 +2917,7 @@ def ajouter_achat_article():
     
     if request.method == 'POST':
         conn = get_db_connection()
-        cursor = conn.cursor(dictionary=True)
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
 
         matricule = request.form['matricule']
         code_article = request.form['code_article']
@@ -2950,7 +2950,7 @@ def ajouter_achat_article():
 
     # Cas GET : on affiche le formulaire
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     cursor.execute("SELECT code, nom, prix FROM articles")
     articles=cursor.fetchall()
@@ -2975,7 +2975,7 @@ def historique_achats():
     filtre_article = request.args.get('article', '').strip()
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # Requête dynamique avec filtres
     query = """
@@ -3041,7 +3041,7 @@ def exporter_historique_achats_pdf():
     filtre_article = request.args.get('article', '').strip()
 
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     query = """
         SELECT aa.*, e.nom, e.postnom, e.prenom, e.section, e.classe, a.nom AS nom_article
@@ -3191,7 +3191,7 @@ def parametres():
 @login_required
 def ajouter_article():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     if request.method == 'POST':
         code = request.form['code']
@@ -3218,7 +3218,7 @@ def ajouter_article():
 @login_required
 def supprimer_article(article_id):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     cursor.execute("DELETE FROM articles WHERE id = %s", (article_id,))
     log_action("suppression article enregistré", session['nom_utilisateur'])
     conn.commit()
@@ -3229,8 +3229,8 @@ def supprimer_article(article_id):
 @login_required
 def gerer_classes():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
+    
     # Récupérer toutes les sections pour le select
     cursor.execute("SELECT * FROM sections ORDER BY nom")
     sections = cursor.fetchall()
@@ -3276,7 +3276,7 @@ from werkzeug.security import generate_password_hash
 @login_required
 def utilisateurs():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     if request.method == 'POST':
         nom = request.form['nom'].strip()
@@ -3449,7 +3449,7 @@ def situation_eleve():
 @login_required
 def telecharger_situation_eleve(matricule, annee_scolaire):
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
 
     # ✅ Récupérer les infos de l'élève
   
