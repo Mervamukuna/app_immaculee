@@ -573,24 +573,24 @@ def telecharger_pdf(classe):
     doc = SimpleDocTemplate(buffer, pagesize=A4)
 
     def add_watermark(canvas, doc):
-        try:
+        #try:
             # Filigrane (au centre en arrière-plan)
-            watermark = ImageReader("static/l.jpg")
-            canvas.saveState()
-            canvas.translate(160, 370)
-            canvas.setFillAlpha(0.05)
-            canvas.drawImage(watermark, 0, 0, width=300, height=300, preserveAspectRatio=True, mask='auto')
-            canvas.restoreState()
-        except:
-            pass
+            #watermark = ImageReader("static/l.jpg")
+            #canvas.saveState()
+            #canvas.translate(160, 370)
+            #canvas.setFillAlpha(0.05)
+            #canvas.drawImage(watermark, 0, 0, width=300, height=300, preserveAspectRatio=True, mask='auto')
+            #canvas.restoreState()
+        #except:
+            #pass
 
         try:
             # Logo gauche
-            logo_gauche = ImageReader("static/logo1.jpg")  # ton logo à gauche
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 30, 740, width=60, height=60, mask='auto')
 
             # Logo droit
-            logo_droit = ImageReader("static/logo.jpg")  # ton logo à droite
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg"))  # ton logo à droite
             canvas.drawImage(logo_droit, 500, 740, width=60, height=60, mask='auto')
         except Exception as e:
             print("Erreur lors de l'affichage des logos :", e)
