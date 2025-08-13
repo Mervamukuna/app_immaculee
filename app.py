@@ -53,7 +53,7 @@ app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
 # Chemin absolu vers le dossier de l'application
-BASE_DIR = os.path.abspath(os.path.dirname(_file_))
+BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
 # Dossier pour les reçus
 DOSSIER_RECUS = os.path.join(BASE_DIR, "recus")
