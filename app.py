@@ -935,7 +935,7 @@ def recu_paiement(id):
         return redirect(url_for('gestion_minerval'))  # Ou vers une page où il peut juste consulter
     try:
         conn = get_db_connection()
-        cursor = conn.cursor(pymysql.cursors.DictCursor)
+        cursor = conn.cursor()
         cursor.execute("""
             SELECT p.*, e.nom, e.postnom, e.prenom, e.genre, e.classe 
             FROM paiements p
