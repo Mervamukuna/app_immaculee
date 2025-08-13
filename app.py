@@ -50,18 +50,6 @@ def verifier_autorisation(section_cible):
 app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
-try:
-    conn = pymysql.connect(
-        user="mervabangi",
-        password="Gestion2025.",
-        host="mervabangi.mysql.pythonanywhere-services.com",
-        database="mervabangi$gestion_eleves_db"
-    )
-    print("✅ Connexion réussie à la base de données !")
-except pymysql.Error as e:
-    print(f"❌ Erreur de connexion à la base de données : {e}")
-    sys.exit(1)
-
 def get_db_connection():
     try:
         conn = pymysql.connect(
