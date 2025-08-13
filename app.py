@@ -54,9 +54,10 @@ app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
 # Chemin absolu vers le dossier de l'application
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-
 # Dossier pour les reçus
 DOSSIER_RECUS = os.path.join(BASE_DIR, "recus")
+
+DOSSIER_STATIC = os.path.join(BASE_DIR,"static")
 
 # Crée le dossier s'il n'existe pas
 os.makedirs(DOSSIER_RECUS, exist_ok=True)
@@ -346,7 +347,7 @@ def inscription():
             deux_ph = request.form.get('deux_ph')
             fournitures = request.form.get('fournitures')
 
-            date_inscription = datetime.now().strftime('%Y-%m-%d')
+            date_inscription = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
 
             # 2. Insertion initiale
@@ -400,8 +401,8 @@ def inscription():
             c = canvas.Canvas(filepath, pagesize=A6)
 
             try:
-                logo_gauche = ImageReader("static/logo1.jpg")
-                logo_droite = ImageReader("static/logo.jpg")
+                logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg"))
+                logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg"))
 
                     # Logos gauche et droite
                 c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
@@ -410,7 +411,7 @@ def inscription():
                 pass
             # Filigrane
             try:
-                    logo = ImageReader("static/logo2.png")
+                    logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
                     c.saveState()
                     c.setFillAlpha(0.08)
                     c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
