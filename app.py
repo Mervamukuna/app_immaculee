@@ -1,4 +1,4 @@
-import mariadb
+import pymysql
 import sys
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, session, flash, send_from_directory
 from reportlab.lib.pagesizes import letter, A5, A6, landscape, A4
@@ -51,7 +51,7 @@ app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
 try:
-    conn = mariadb.connect(
+    conn = pymysql.connect(
         user="gestion_eleves_user",
         password="Gestion2025.",
         host="localhost",
@@ -59,20 +59,20 @@ try:
         database="gestion_eleves_db"
     )
     print("✅ Connexion réussie à la base de données !")
-except mariadb.Error as e:
+except pymysql.Error as e:
     print(f"❌ Erreur de connexion à la base de données : {e}")
     sys.exit(1)
 
 def get_db_connection():
     try:
-        conn = mariadb.connect(
+        conn = pymysql.connect(
             host="localhost",
             user="gestion_eleves_user",
             password="Gestion2025.",
             database="gestion_eleves_db"
         )
         return conn
-    except mariadb.Error as e:
+    except pymysql.Error as e:
         print(f"Erreur de connexion à la base de données : {e}")
         return None
 def login_required(f):
