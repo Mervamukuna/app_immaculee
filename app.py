@@ -410,14 +410,14 @@ def inscription():
             except:
                 pass
             # Filigrane
-            try:
-                    logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.png"))
-                    c.saveState()
-                    c.setFillAlpha(0.1)
-                    c.drawImage(logo, 50, 150, width=150, height=100, preserveAspectRatio=True, mask='auto')
-                    c.restoreState()
-            except:
-                    pass
+            #try:
+                    #logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.png"))
+                    #c.saveState()
+                    #c.setFillAlpha(0.1)
+                    #c.drawImage(logo, 50, 150, width=150, height=100, preserveAspectRatio=True, mask='auto')
+                    #c.restoreState()
+            #except:
+                    #pass
 
             # Texte
             c.setFont("Helvetica-Bold", 13)
