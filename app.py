@@ -1,4 +1,5 @@
 import pymysql
+import pymysql.cursors
 import sys
 from flask import Flask, render_template, request, redirect, url_for, jsonify, send_file, session, flash, send_from_directory
 from reportlab.lib.pagesizes import letter, A5, A6, landscape, A4
@@ -1061,7 +1062,7 @@ def infos_eleve(matricule):
 @login_required
 def historique_paiements():
     conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
+    cursor = conn.cursor(pymysql.cursors.DictCursor)
     
     # 🔍 Récupération des valeurs uniques pour les listes déroulantes
     cursor.execute("SELECT DISTINCT classe FROM eleves")
