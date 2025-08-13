@@ -370,9 +370,15 @@ def inscription():
             # Message de bienvenue
             message = f"C.S.Immaculée Conception de la Charité : Bonjour ! Votre enfant {nom} {postnom} {prenom} a été inscrit avec succès. Merci pour votre confiance."
 
-            # Envoi du SMS
-            envoyer_sms(telephone_responsable, message)
-
+            # Envoi du SMS dans un bloc sécurisé
+            try:
+                envoyer_sms(telephone_responsable, message)
+            except Exception as sms_error:
+                import traceback
+                print("Erreur Twilio :", sms_error)
+                traceback.print_exc()
+                # Tu peux aussi logger dans un fichier ou base si tu as un logger configuré
+                log_action(f"Erreur Twilio pour {telephone_responsable}: {sms_error}", session.get('nom_utilisateur', 'Inconnu'))
             conn.close()
             caissier = session.get('nom_utilisateur', 'Inconnu')
 
