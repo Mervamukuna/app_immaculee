@@ -168,7 +168,7 @@ def changer_mot_de_passe():
             utilisateur = cursor.fetchone()
 
             if utilisateur and check_password_hash(utilisateur[0], ancien):
-                nouveau_hache = generate_password_hash(nouveau)
+                nouveau_hache = generate_password_hash(nouveau, method="pbkdf2:sha256")
                 cursor.execute("""
                     UPDATE utilisateurs SET mot_de_passe = %s 
                     WHERE nom = %s AND prenom = %s
@@ -3284,7 +3284,7 @@ def utilisateurs():
         role = request.form['role']
 
         # Hachage du mot de passe
-        mot_de_passe_hache = generate_password_hash(mot_de_passe)
+        mot_de_passe_hache = generate_password_hash(mot_de_passe, method="pbkdf2:sha256")
 
         cursor.execute("""
             INSERT INTO utilisateurs (nom, prenom, mot_de_passe, role)
