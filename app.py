@@ -52,11 +52,10 @@ app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
 try:
     conn = pymysql.connect(
-        user="gestion_eleves_user",
+        user="mervabangi",
         password="Gestion2025.",
-        host="localhost",
-        port=3306,
-        database="gestion_eleves_db"
+        host="mervabangi.mysql.pythonanywhere-services.com",
+        database="mervabangi$gestion_eleves_db"
     )
     print("✅ Connexion réussie à la base de données !")
 except pymysql.Error as e:
@@ -66,10 +65,10 @@ except pymysql.Error as e:
 def get_db_connection():
     try:
         conn = pymysql.connect(
-            host="localhost",
-            user="gestion_eleves_user",
+            host="mervabangi.mysql.pythonanywhere-services.com",
+            user="mervabangi",
             password="Gestion2025.",
-            database="gestion_eleves_db"
+            database="mervabangi$gestion_eleves_db"
         )
         return conn
     except pymysql.Error as e:
