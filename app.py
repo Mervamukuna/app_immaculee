@@ -48,6 +48,7 @@ def verifier_autorisation(section_cible):
     return False
 
 #Creation de l'application Flask
+#####
 app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
 
