@@ -378,9 +378,9 @@ def inscription():
 
             # 4. Génération du reçu PDF
             nom_complet = f"{nom} {postnom} {prenom}"
-            filename = f"reçu_inscription_{matricule}.pdf"
-            os.makedirs("reçus", exist_ok=True)
-            filepath = os.path.join("reçus", filename)
+            filename = f"recu_inscription_{matricule}.pdf"
+            os.makedirs("recus", exist_ok=True)
+            filepath = os.path.join("recus", filename)
 
             c = canvas.Canvas(filepath, pagesize=A6)
 
@@ -451,8 +451,8 @@ def telecharger_recu_pdf(matricule):
 
     if role == 'lecture':
         return redirect(url_for('menu'))  # Ou vers une page où il peut juste consulter
-    dossier_recu = "reçus"
-    nom_fichier = f"reçu_inscription_{matricule}.pdf"
+    dossier_recu = "recus"
+    nom_fichier = f"recu_inscription_{matricule}.pdf"
     chemin_fichier = os.path.join(dossier_recu, nom_fichier)
 
     if os.path.exists(chemin_fichier):
@@ -3230,7 +3230,7 @@ def supprimer_article(article_id):
 def gerer_classes():
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    
+
     # Récupérer toutes les sections pour le select
     cursor.execute("SELECT * FROM sections ORDER BY nom")
     sections = cursor.fetchall()
