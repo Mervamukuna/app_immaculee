@@ -903,8 +903,6 @@ def paiement():
         # GET: afficher formulaire
         return render_template('paiement.html')
 
-
-
 @app.route('/confirmation_paiement')
 @login_required
 def confirmation_paiement():
@@ -951,12 +949,14 @@ def recu_paiement(id):
 
         if not paiement:
             return "❌ Paiement introuvable", 404
-
+        # ← Ici, tu ajoutes la sécurisation des montants
+        montant_a_payer = float(paiement['montant_a_payer'] or 0)
+        montant_paye = float(paiement['montant_paye'] or 0)
+        montant_restant = montant_a_payer - montant_paye
         nom_complet = f"{paiement['nom']} {paiement['postnom']} {paiement['prenom']}"
         montant_restant = float(paiement['montant_a_payer']) - float(paiement['montant_paye'])
         filename = f"recu_paiement_{paiement['matricule']}_{paiement['mois']}.pdf"
-        folder = "reçus_minerval"
-        filepath = os.path.join(folder, filename)
+        filepath = os.path.join(DOSSIER_RECUS, filename)
 
         # Création du dossier s'il n'existe pas
         if not os.path.exists(folder):
@@ -965,8 +965,8 @@ def recu_paiement(id):
         c = canvas.Canvas(filepath, pagesize=A6)
 
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
-            logo_droite = ImageReader("static/logo.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
 
                 # Logos gauche et droite
             c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
@@ -974,14 +974,14 @@ def recu_paiement(id):
         except:
             pass
         # Filigrane
-        try:
-                logo = ImageReader("static/logo2.png")
-                c.saveState()
-                c.setFillAlpha(0.08)
-                c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-                c.restoreState()
-        except:
-                pass
+        #try:
+                #logo = ImageReader("static/logo2.png")
+                #c.saveState()
+                #c.setFillAlpha(0.08)
+                #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
+                #c.restoreState()
+        #except:
+                #pass
 
         # Texte
         c.setFont("Helvetica-Bold", 13)
@@ -1007,8 +1007,11 @@ def recu_paiement(id):
         c.drawString(25, 40, "Veillez bien garder votre recu!")
         c.save()
 
-
-        return send_file(filepath)
+        # ← Ici, ajoute la vérification
+        if os.path.exists(filepath):
+            return send_file(filepath)
+        else:
+            return "Le reçu n’a pas pu être généré.", 500
 
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
