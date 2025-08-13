@@ -957,6 +957,7 @@ def recu_paiement(id):
         montant_restant = float(paiement['montant_a_payer']) - float(paiement['montant_paye'])
         filename = f"recu_paiement_{paiement['matricule']}_{paiement['mois']}.pdf"
         filepath = os.path.join(DOSSIER_RECUS, filename)
+        folder=DOSSIER_RECUS
 
         # Création du dossier s'il n'existe pas
         if not os.path.exists(folder):
