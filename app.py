@@ -48,9 +48,18 @@ def verifier_autorisation(section_cible):
     return False
 
 #Creation de l'application Flask
-#####
+
 app = Flask(__name__)
 app.secret_key = 'abc123xyz'  # Clé secrète pour la session
+
+# Chemin absolu vers le dossier de l'application
+BASE_DIR = os.path.abspath(os.path.dirname(_file_))
+
+# Dossier pour les reçus
+DOSSIER_RECUS = os.path.join(BASE_DIR, "recus")
+
+# Crée le dossier s'il n'existe pas
+os.makedirs(DOSSIER_RECUS, exist_ok=True)
 
 def get_db_connection():
     try:
@@ -386,8 +395,7 @@ def inscription():
             # 4. Génération du reçu PDF
             nom_complet = f"{nom} {postnom} {prenom}"
             filename = f"recu_inscription_{matricule}.pdf"
-            os.makedirs("recus", exist_ok=True)
-            filepath = os.path.join("recus", filename)
+            filepath = os.path.join(DOSSIER_RECUS, filename)
 
             c = canvas.Canvas(filepath, pagesize=A6)
 
@@ -449,21 +457,15 @@ def inscription():
     # Si GET
     return render_template('inscription.html')
 
-
 #Route telechargemenr recu
 @app.route('/telecharger_recu/<matricule>')
 @login_required
 def telecharger_recu_pdf(matricule):
-    role = session.get('role_utilisateur', '')
-
-    if role == 'lecture':
-        return redirect(url_for('menu'))  # Ou vers une page où il peut juste consulter
-    dossier_recu = "recus"
     nom_fichier = f"recu_inscription_{matricule}.pdf"
-    chemin_fichier = os.path.join(dossier_recu, nom_fichier)
+    chemin_fichier = os.path.join(DOSSIER_RECUS, nom_fichier)
 
     if os.path.exists(chemin_fichier):
-        return send_from_directory(dossier_recu, nom_fichier)
+        return send_from_directory(DOSSIER_RECUS, nom_fichier)
     else:
         return f"Reçu introuvable pour le matricule {matricule}", 404
 
