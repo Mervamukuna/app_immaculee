@@ -1192,12 +1192,13 @@ def historique_paiements():
 @login_required
 def telecharger_historique_paiement():
     # Récupération des filtres
-    filtre_matricule = request.args.get('filtre_matricule', '').strip()
-    filtre_classe = request.args.get('filtre_classe', '')
-    filtre_mois = request.args.get('filtre_mois', '')
-    filtre_jour = request.args.get('filtre_jour', '')
-    filtre_caissier = request.args.get('filtre_caissier', '')
-
+    filtre_matricule = request.values.get('filtre_matricule', '').strip()
+    filtre_classe    = request.values.get('filtre_classe', '')
+    filtre_ordre     = request.values.get('filtre_ordre', '')
+    filtre_mois      = request.values.get('filtre_mois', '')
+    filtre_jour      = request.values.get('filtre_jour', '')
+    filtre_caissier  = request.values.get('filtre_caissier', '')
+    
     conn = conn = conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 

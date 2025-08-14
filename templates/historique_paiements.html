@@ -144,25 +144,20 @@
                 </a>
             </div>
             <div class="col-md-4 text-end">
-                <button type="button" id="btn-pdf" class="btn btn-success w-100 rounded-pill" style="background-color: #114199;">
+                <a href="{{ url_for('imprimer_pdf') }}?url={{ 
+                    url_for('telecharger_historique_paiement', 
+                        filtre_matricule=filtre_matricule, 
+                        filtre_classe=filtre_classe, 
+                        filtre_mois=filtre_mois, 
+                        filtre_jour=filtre_jour, 
+                        filtre_caissier=filtre_caissier
+                    ) | urlencode 
+                }}" 
+                class="btn btn-success w-100 rounded-pill" target="_blank" style="background-color: #114199;">
                     <i class="fa-solid fa-file-arrow-down me-1"></i>Imprimer la liste
-                </button>
+                </a>
+
             </div>
-
-            <script>
-            document.getElementById('btn-pdf').addEventListener('click', function() {
-                const params = new URLSearchParams();
-                params.append('filtre_matricule', document.querySelector('input[name="filtre_matricule"]').value);
-                params.append('filtre_classe', document.querySelector('select[name="filtre_classe"]').value);
-                params.append('filtre_ordre', document.querySelector('select[name="filtre_ordre"]').value);
-                params.append('filtre_mois', document.querySelector('select[name="filtre_mois"]').value);
-                params.append('filtre_jour', document.querySelector('input[name="filtre_jour"]').value);
-                params.append('filtre_caissier', document.querySelector('select[name="filtre_caissier"]').value);
-
-                const url = "{{ url_for('telecharger_historique_paiement') }}?" + params.toString();
-                window.open(url, '_blank');
-            });
-            </script>
         </form>
 
         <!-- 📊 Tableau -->
