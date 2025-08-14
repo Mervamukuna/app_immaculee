@@ -1003,7 +1003,7 @@ def recu_paiement(id):
         c.drawString(25, 140, f"Mois payé : {paiement['mois']}")
         c.drawString(25, 120, f"Montant payé : {float(paiement['montant_paye']):,.1f} $")
         c.drawString(25, 100, f"Montant restant : {montant_restant:,.1f} $")
-        c.drawString(25, 80, f"Caissière : {paiement['observation']}")
+        c.drawString(25, 80, f"Caissier(ère) : {paiement['observation']}")
 
         c.setFont("Helvetica-Oblique", 10)
         c.drawString(25, 50, "Merci pour votre confiance!")
@@ -2698,7 +2698,7 @@ def recu_frais_etat(id):
         montant=float(frais['montant'] or 0)
         c.drawString(25, 160, f"Montant payé : {montant:,.1f} FC")
         caissier = frais['caissier'] or "Inconnu"
-        c.drawString(25, 140, f"Caissier : {caissier}")
+        c.drawString(25, 140, f"Caissier(ère) : {caissier}")
 
         # Bas de page
         c.setFont("Helvetica-Oblique", 10)
@@ -3565,10 +3565,11 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
             canvas.drawImage(logo_droit, largeur - 90, hauteur - 100, width=60, height=60)
         except:
             pass
-
+        canvas.setFont("Helvetica-Bold", 16)
+        canvas.drawCentredString(largeur / 2, hauteur - 40, "COMPLEXE SCOLAIRE IMMACULÉE CONCEPTION DE LA CHARITÉ")
         canvas.setFont("Helvetica-Bold", 14)
-        canvas.drawCentredString(largeur / 2, hauteur - 40, "IMMACULEE CONCEPTION DE LA CHARITE")
-        canvas.drawCentredString(largeur / 2, hauteur - 60, "SITUATION DE L'ÉLÈVE")
+        canvas.drawCentredString(largeur / 2, hauteur - 60, "IMMACULEE CONCEPTION DE LA CHARITE")
+        canvas.drawCentredString(largeur / 2, hauteur - 80, "SITUATION DE L'ÉLÈVE")
         canvas.setFont("Helvetica", 12)
         canvas.drawString(30, hauteur - 120, f"Nom : {eleve['nom']} {eleve['postnom']} {eleve['prenom']}")
         canvas.drawString(320, hauteur - 120, f"Matricule : {matricule}")
