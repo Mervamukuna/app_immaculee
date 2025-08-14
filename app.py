@@ -423,10 +423,10 @@ def inscription():
             # Texte
             c.setFont("Helvetica-Bold", 13)
             c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-            c.drawCentredString(149, 310, "IMMACULEE CONCEPTION")
-            c.drawCentredString(149, 300, "DE LA CHARITE")
+            c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
+            c.drawCentredString(149, 290, "DE LA CHARITE")
             c.setFont("Helvetica-Bold", 12)
-            c.drawCentredString(149, 280, "REÇU D'INSCRIPTION")
+            c.drawCentredString(149, 270, "REÇU D'INSCRIPTION")
 
             c.setFont("Helvetica", 12)
             c.drawString(25, 240, f"Date : {date_inscription}")
@@ -439,8 +439,8 @@ def inscription():
             c.drawString(25, 100, f"Caissier(ère) : {caissier}")
 
             c.setFont("Helvetica-Oblique", 10)
-            c.drawString(25, 90, "Merci pour votre confiance!")
-            c.drawString(25, 80, "Veillez bien garder votre recu!")
+            c.drawString(25, 80, "Merci pour votre confiance!")
+            c.drawString(25, 65, "Veillez bien garder votre recu!")
             c.save()
 
             # 5. Redirection vers confirmation
