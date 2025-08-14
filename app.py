@@ -2945,7 +2945,7 @@ def exporter_frais_etat_pdf():
                             topMargin=130, leftMargin=25, rightMargin=25, bottomMargin=40)
     elements = [table, Spacer(1, 12), total_table]
     doc.build(elements, onFirstPage=entete, onLaterPages=entete)
-
+    filename = "export_frais_etat.pdf"
     return send_file(filepath, as_attachment=False, download_name=filename)
 
 @app.route('/ajouter_achat_article', methods=['GET', 'POST'])
