@@ -978,14 +978,14 @@ def recu_paiement(id):
             pass
         
         # Filigrane
-            try:
-                logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
-                c.saveState()
-                c.setFillAlpha(0.1)
-                c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
-                c.restoreState()
-            except:
-                pass
+        try:
+            logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
+            c.saveState()
+            c.setFillAlpha(0.1)
+            c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
+            c.restoreState()
+        except:
+            pass
         # Texte
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
