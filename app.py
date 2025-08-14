@@ -405,7 +405,7 @@ def inscription():
                 logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg"))
                 logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg"))
 
-                    # Logos gauche et droite
+                #Logos gauche et droite
                 c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
                 c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
             except:
@@ -423,10 +423,10 @@ def inscription():
             # Texte
             c.setFont("Helvetica-Bold", 13)
             c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-            c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
-            c.drawCentredString(149, 280, "DE LA CHARITE")
+            c.drawCentredString(149, 310, "IMMACULEE CONCEPTION")
+            c.drawCentredString(149, 300, "DE LA CHARITE")
             c.setFont("Helvetica-Bold", 12)
-            c.drawCentredString(149, 260, "REÇU D'INSCRIPTION")
+            c.drawCentredString(149, 280, "REÇU D'INSCRIPTION")
 
             c.setFont("Helvetica", 12)
             c.drawString(25, 240, f"Date : {date_inscription}")
@@ -439,8 +439,8 @@ def inscription():
             c.drawString(25, 100, f"Caissier(ère) : {caissier}")
 
             c.setFont("Helvetica-Oblique", 10)
-            c.drawString(25, 70, "Merci pour votre confiance!")
-            c.drawString(25, 50, "Veillez bien garder votre recu!")
+            c.drawString(25, 90, "Merci pour votre confiance!")
+            c.drawString(25, 80, "Veillez bien garder votre recu!")
             c.save()
 
             # 5. Redirection vers confirmation
