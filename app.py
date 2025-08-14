@@ -1460,10 +1460,13 @@ def telecharger_non_en_ordre():
     conn.close()
 
     # Création du PDF
-    filename = "eleves_partiellement_en_ordre.pdf"
-    filepath = os.path.join("reçus_minerval", filename)
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+    filepath = os.path.join(DOSSIER_RECUS, "eleves_partiellement_en_ordre.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
@@ -1503,10 +1506,11 @@ def telecharger_non_en_ordre():
         
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
-            logo_droit = ImageReader("static/logo.jpg")
+
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
