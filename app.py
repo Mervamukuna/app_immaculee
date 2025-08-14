@@ -1537,13 +1537,12 @@ def telecharger_non_en_ordre():
 @app.route('/recu_finalisation/<matricule>/<mois>')
 @login_required
 def recu_finalisation(matricule, mois):
-    filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation")
-    if not os.path.exists(DOSSIER_RECUS):
-        os.makedirs(DOSSIER_RECUS)
+    filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation.pdf")
 
-    # Supprime l'ancien PDF si besoin
-    if os.path.exists(filepath):
-        os.remove(filepath)
+    if not os.path.exists(filepath):
+        return "Reçu introuvable", 404
+
+    return send_file(filepath, mimetype='application/pdf')
 
 @app.route('/finaliser_paiement/<matricule>/<mois>', methods=['GET', 'POST'])
 @login_required
@@ -1564,7 +1563,7 @@ def finaliser_paiement(matricule, mois):
     if not paiement:
         conn.close()
         return "Paiement introuvable", 404
-
+    nom_complet = f"{paiement['nom']} {paiement['postnom']} {paiement['prenom']}"
     cursor.execute("""
         SELECT SUM(montant_paye) as total
         FROM paiements
@@ -1640,7 +1639,7 @@ def finaliser_paiement(matricule, mois):
         conn.close()
 
         # ✅ Génération automatique du reçu
-        filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation")
+        filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation.pdf")
         if not os.path.exists(DOSSIER_RECUS):
             os.makedirs(DOSSIER_RECUS)
 
@@ -1658,14 +1657,14 @@ def finaliser_paiement(matricule, mois):
         except:
             pass
 
-        try:
-            logo = ImageReader("static/logo2.png")
-            c.saveState()
-            c.setFillAlpha(0.08)
-            c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-            c.restoreState()
-        except:
-            pass
+        #try:
+            #logo = ImageReader("static/logo2.png")
+            #c.saveState()
+            #c.setFillAlpha(0.08)
+            #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
+            #c.restoreState()
+        #except:
+            #pass
 
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
@@ -1696,7 +1695,7 @@ def finaliser_paiement(matricule, mois):
                            montant_restant=montant_restant,
                            montant_paye_total=montant_paye_total,
                            nom_caissier=nom_caissier,
-                           current_date=datetime.now().strftime('%Y-%m-%d'))
+                           current_date=datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
 
 
 @app.route('/eleves_en_ordre', methods=['GET', 'POST'])
