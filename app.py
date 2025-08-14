@@ -1305,10 +1305,9 @@ def telecharger_historique_paiement():
 
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
-
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
