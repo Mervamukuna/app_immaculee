@@ -1824,10 +1824,13 @@ def telecharger_eleves_en_ordre():
     conn.close()
 
     # Création du fichier PDF
-    filename = "eleves_en_ordre.pdf"
-    filepath = os.path.join("reçus_minerval", filename)
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+    filepath = os.path.join(DOSSIER_RECUS, "eleves_en_ordre.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
@@ -1871,10 +1874,10 @@ def telecharger_eleves_en_ordre():
         
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
@@ -2001,10 +2004,13 @@ def telecharger_sans_paiement():
 
     # Création du fichier PDF
 
-    filename = "eleves_sans_paiement.pdf"
-    filepath = os.path.join("reçus_minerval", filename)
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+    filepath = os.path.join(DOSSIER_RECUS, "eleves_sans_paiement.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
@@ -2037,10 +2043,10 @@ def telecharger_sans_paiement():
         canvas.saveState()
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
 
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
@@ -2223,10 +2229,13 @@ def telecharger_statistiques_paiements():
     total_ecart = total_attendu - total_paye
 
     # Génération PDF
-    filename = "statistiques_paiements.pdf"
-    filepath = os.path.join("reçus_minerval", filename)
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+    filepath = os.path.join(DOSSIER_RECUS, "statistiques_paiements.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
@@ -2277,10 +2286,9 @@ def telecharger_statistiques_paiements():
         canvas.saveState()
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
-
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
@@ -2496,10 +2504,13 @@ def telecharger_rapport_global_paiements():
     conn.close()
 
     # Génération PDF
-    dossier = "rapports_global"
-    if not os.path.exists(dossier):
-        os.makedirs(dossier)
-    filepath = os.path.join(dossier, "rapport_global_paiements.pdf")
+    filepath = os.path.join(DOSSIER_RECUS, "rapports_global.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     styles = getSampleStyleSheet()
     largeur, hauteur = landscape(A4)
@@ -2507,10 +2518,9 @@ def telecharger_rapport_global_paiements():
     def en_tete(canvas, doc):
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 100, width=60, height=60, mask='auto')
-
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 100, width=60, height=60, mask='auto')
         except:
             pass
@@ -2846,11 +2856,15 @@ def exporter_frais_etat_pdf():
         return "Aucun élève trouvé selon les filtres.", 404
 
     # Création PDF
-    filename = "export_frais_etat.pdf"
-    folder = "reçus_minerval"
-    if not os.path.exists(folder):
-        os.makedirs(folder)
-    filepath = os.path.join(folder, filename)
+    
+    filepath = os.path.join(DOSSIER_RECUS, "export_frais_etat.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
@@ -2905,9 +2919,9 @@ def exporter_frais_etat_pdf():
         canvas.saveState()
         # 🔹 Images gauche et droite
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
-
             logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
@@ -3105,10 +3119,14 @@ def exporter_historique_achats_pdf():
         return "Aucun achat trouvé avec ces filtres.", 404
 
     # Préparation PDF
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("recus_minerval")
+    filepath = os.path.join(DOSSIER_RECUS, "historique_achats.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
 
-    filepath = os.path.join("reçus_minerval", "historique_achats.pdf")
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
+
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
 
@@ -3163,10 +3181,9 @@ def exporter_historique_achats_pdf():
             canvas.saveState()
             # 🔹 Images gauche et droite
             try:
-                logo_gauche = ImageReader("static/logo1.jpg")
+                logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+                logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
                 canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
-
-                logo_droit = ImageReader("static/logo.jpg")
                 canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
             except:
                 pass
@@ -3528,20 +3545,23 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
     conn.close()
 
     # 📄 Génération PDF
-    dossier = "pdf_situation_eleve"
-    if not os.path.exists(dossier):
-        os.makedirs(dossier)
-    chemin = os.path.join(dossier, f"situation_{matricule}.pdf")
+    filepath = os.path.join(DOSSIER_RECUS, "situation_eleve.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
+    if os.path.exists(filepath):
+        os.remove(filepath)
 
     largeur, hauteur = landscape(A4)
     styles = getSampleStyleSheet()
 
     def en_tete(canvas, doc):
         try:
-            logo1 = ImageReader("static/logo1.jpg")
-            logo2 = ImageReader("static/logo.jpg")
-            canvas.drawImage(logo1, 30, hauteur - 100, width=60, height=60)
-            canvas.drawImage(logo2, largeur - 90, hauteur - 100, width=60, height=60)
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
+            canvas.drawImage(logo_gauche, 30, hauteur - 100, width=60, height=60)
+            canvas.drawImage(logo_droit, largeur - 90, hauteur - 100, width=60, height=60)
         except:
             pass
 
