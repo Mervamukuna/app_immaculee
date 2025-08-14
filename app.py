@@ -2577,10 +2577,10 @@ def enregistrer_frais_etat():
 
     message = None
     if request.method == 'POST':
-        matricule = request.form['matricule']
-        tranche = request.form['tranche']
+        matricule = request.form['matricule','Inconnu']
+        tranche = request.form['tranche','Inconnu']
         montant = request.form['montant']
-        date_paiement = request.form['date_paiement']
+        date_paiement = request.form['date_paiement','Inconnu']
         caissier = session.get('nom_utilisateur', 'Inconnu')
 
         conn = get_db_connection()
@@ -2653,35 +2653,35 @@ def recu_frais_etat(id):
             return "❌ Paiement introuvable", 404
 
         nom_complet = f"{frais['nom']} {frais['postnom']} {frais['prenom']}"
-        filename = f"recu_frais_etat_{frais['matricule']}_T{frais['tranche']}.pdf"
-        folder = "reçus_frais_etat"
-        filepath = os.path.join(folder, filename)
+        filepath = os.path.join(DOSSIER_RECUS, "recu_frais_etat.pdf")
+        if not os.path.exists(DOSSIER_RECUS):
+            os.makedirs(DOSSIER_RECUS)
 
-        if not os.path.exists(folder):
-            os.makedirs(folder)
+        # Supprime l'ancien PDF si besoin
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
         c = canvas.Canvas(filepath, pagesize=A6)
 
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
-            logo_droite = ImageReader("static/logo.jpg")
-
-                    # Logos gauche et droite
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
+                
             c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
             c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
-                pass
+            pass
             # Filigrane
-        try:
-            logo = ImageReader("static/logo2.png")
-            c.saveState()
-            c.setFillAlpha(0.08)
-            c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-            c.restoreState()
-        except:
-                pass
+        #try:
+            #logo = ImageReader("static/logo2.png")
+            #c.saveState()
+            #c.setFillAlpha(0.08)
+            #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
+            #c.restoreState()
+        #except:
+                #pass
 
-            # Texte
+        # Texte
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
         c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
@@ -2695,8 +2695,10 @@ def recu_frais_etat(id):
         c.drawString(25, 220, f"Matricule : {frais['matricule']}")
         c.drawString(25, 200, f"Nom complet : {nom_complet}")
         c.drawString(25, 180, f"Tranche : {frais['tranche']}")
-        c.drawString(25, 160, f"Montant payé : {float(frais['montant']):,.1f} FC")
-        c.drawString(25, 140, f"Caissier : {frais['caissier']}")
+        montant=float(frais['montant'] or 0)
+        c.drawString(25, 160, f"Montant payé : {montant:,.1f} FC")
+        caissier = frais['caissier'] or "Inconnu"
+        c.drawString(25, 140, f"Caissier : {caissier}")
 
         # Bas de page
         c.setFont("Helvetica-Oblique", 10)
