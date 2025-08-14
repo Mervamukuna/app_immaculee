@@ -1198,9 +1198,11 @@ def telecharger_historique_paiement():
     filtre_jour      = request.values.get('filtre_jour', '')
     filtre_caissier  = request.values.get('filtre_caissier', '')
 
-    conn = conn = conn = get_db_connection()
+    conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-
+    cursor.execute("SELECT COUNT(*) AS total FROM paiements")
+    result = cursor.fetchone()
+    print("Nombre de paiements dans MySQL :", result['total'])
     # Requête SQL dynamique avec filtres
     query = """
         SELECT p.*, e.nom, e.postnom, e.prenom, e.classe, e.section
