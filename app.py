@@ -938,7 +938,7 @@ def recu_paiement(id):
         return redirect(url_for('gestion_minerval'))  # Ou vers une page où il peut juste consulter
     try:
         conn = get_db_connection()
-        cursor = conn.cursor()
+        cursor = conn.cursor(pymysql.cursors.DictCursor)
         cursor.execute("""
             SELECT p.*, e.nom, e.postnom, e.prenom, e.genre, e.classe 
             FROM paiements p
@@ -956,6 +956,7 @@ def recu_paiement(id):
         montant_restant = montant_a_payer - montant_paye
         nom_complet = f"{paiement['nom']} {paiement['postnom']} {paiement['prenom']}"
         montant_restant = float(paiement['montant_a_payer']) - float(paiement['montant_paye'])
+        
         filepath = os.path.join(DOSSIER_RECUS, "recu_paiement.pdf")
         if not os.path.exists(DOSSIER_RECUS):
             os.makedirs(DOSSIER_RECUS)
