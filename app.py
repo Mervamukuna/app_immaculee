@@ -426,7 +426,7 @@ def inscription():
             c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
             c.drawCentredString(149, 290, "DE LA CHARITE")
             c.setFont("Helvetica-Bold", 12)
-            c.drawCentredString(149, 270, "REÇU D'INSCRIPTION")
+            c.drawCentredString(149, 275, "REÇU D'INSCRIPTION")
 
             c.setFont("Helvetica", 12)
             c.drawString(25, 240, f"Date : {date_inscription}")
