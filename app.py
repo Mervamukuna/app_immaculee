@@ -406,8 +406,8 @@ def inscription():
                 logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg"))
 
                 #Logos gauche et droite
-                c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
-                c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+                c.drawImage(logo_gauche, 15, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+                c.drawImage(logo_droite, 245, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
             except:
                 pass
             # Filigrane
