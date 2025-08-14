@@ -2577,10 +2577,10 @@ def enregistrer_frais_etat():
 
     message = None
     if request.method == 'POST':
-        matricule = request.form['matricule','Inconnu']
-        tranche = request.form['tranche','Inconnu']
-        montant = request.form['montant']
-        date_paiement = request.form['date_paiement','Inconnu']
+        matricule = request.form.get['matricule','Inconnu']
+        tranche = request.form.get['tranche','Inconnu']
+        montant = request.form.get['montant']
+        date_paiement = request.form.get['date_paiement','Inconnu']
         caissier = session.get('nom_utilisateur', 'Inconnu')
 
         conn = get_db_connection()
