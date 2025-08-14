@@ -1242,10 +1242,9 @@ def telecharger_historique_paiement():
     conn.close()
 
     # 🔽 Création du fichier PDF
-    filename = "historique_paiements.pdf"
-    filepath = os.path.join("reçus_minerval", filename)
-    if not os.path.exists("reçus_minerval"):
-        os.makedirs("reçus_minerval")
+    filepath = os.path.join("recus_minerval", "historique_paiements.pdf")
+    if os.path.exists(filepath):
+        os.remove(filepath)  # 🔹 Supprime l'ancien PDF avant de créer le nouveau
 
 
     largeur, hauteur = landscape(A4)
