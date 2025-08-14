@@ -3595,10 +3595,10 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
     ]))
 
-    doc = SimpleDocTemplate(chemin, pagesize=landscape(A4), topMargin=160, leftMargin=30, rightMargin=30)
+    doc = SimpleDocTemplate(filepath, pagesize=landscape(A4), topMargin=160, leftMargin=30, rightMargin=30)
     doc.build([table_minerval, Spacer(1, 20), table_etat], onFirstPage=en_tete, onLaterPages=en_tete)
 
-    return send_file(chemin, as_attachment=False)
+    return send_file(filepath, as_attachment=False)
 
 #Point d'entree principal
 if __name__ == '__main__':
