@@ -1200,9 +1200,12 @@ def telecharger_historique_paiement():
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-    cursor.execute("SELECT COUNT(*) AS total FROM paiements")
-    result = cursor.fetchone()
-    print("Nombre de paiements dans MySQL :", result['total'])
+   # 🔹 Affichage dans les logs serveur pour debug
+    print("=== INFO CONNEXION PDF ===")
+    print("Host :", conn.host if hasattr(conn, 'host') else "Inconnu")
+    print("User :", conn.user if hasattr(conn, 'user') else "Inconnu")
+    print("Database :", conn.db if hasattr(conn, 'db') else "Inconnu")
+    print("==========================")
     # Requête SQL dynamique avec filtres
     query = """
         SELECT p.*, e.nom, e.postnom, e.prenom, e.classe, e.section
