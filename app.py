@@ -2856,7 +2856,6 @@ def exporter_frais_etat_pdf():
         return "Aucun élève trouvé selon les filtres.", 404
 
     # Création PDF
-    
     filepath = os.path.join(DOSSIER_RECUS, "export_frais_etat.pdf")
     if not os.path.exists(DOSSIER_RECUS):
         os.makedirs(DOSSIER_RECUS)
@@ -2922,7 +2921,6 @@ def exporter_frais_etat_pdf():
             logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
             logo_droit = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             canvas.drawImage(logo_gauche, 60, hauteur - 80, width=60, height=60, mask='auto')
-            logo_droit = ImageReader("static/logo.jpg")
             canvas.drawImage(logo_droit, largeur - 120, hauteur - 80, width=60, height=60, mask='auto')
         except:
             pass
