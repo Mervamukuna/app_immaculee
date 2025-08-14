@@ -1090,13 +1090,17 @@ def historique_paiements():
     caissiers = [row['observation'] for row in cursor.fetchall()]
 
     # Récupération des filtres envoyés via formulaire
-    filtre_matricule = request.form.get('filtre_matricule', '').strip()
-    filtre_classe = request.form.get('filtre_classe', '')
-    filtre_ordre = request.form.get('filtre_ordre', '')
-    filtre_mois = request.form.get('filtre_mois', '')
-    filtre_jour = request.form.get('filtre_jour', '')
-    filtre_caissier = request.form.get('filtre_caissier', '')
+    # Fonction utilitaire pour récupérer depuis POST ou GET
+    def get_filter_value(key):
+        return (request.form.get(key) or request.args.get(key) or '').strip()
 
+    # Récupération des filtres
+    filtre_matricule = get_filter_value('filtre_matricule')
+    filtre_classe = get_filter_value('filtre_classe')
+    filtre_ordre = get_filter_value('filtre_ordre')
+    filtre_mois = get_filter_value('filtre_mois')
+    filtre_jour = get_filter_value('filtre_jour')
+    filtre_caissier = get_filter_value('filtre_caissier')
     # Construction dynamique de la requête SQL avec filtres
     requete = """
         SELECT p.*, e.nom, e.postnom, e.prenom, e.classe, e.section
