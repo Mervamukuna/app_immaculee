@@ -972,27 +972,27 @@ def recu_paiement(id):
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
 
                 # Logos gauche et droite
-            c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 15, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 245, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
+        
         # Filigrane
-        #try:
-                #logo = ImageReader("static/logo2.png")
-                #c.saveState()
-                #c.setFillAlpha(0.08)
-                #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-                #c.restoreState()
-        #except:
-                #pass
-
+            try:
+                logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
+                c.saveState()
+                c.setFillAlpha(0.1)
+                c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
+                c.restoreState()
+            except:
+                pass
         # Texte
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-        c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
-        c.drawCentredString(149, 280, "DE LA CHARITE")
+        c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
+        c.drawCentredString(149, 290, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(149, 260, "REÇU DE PAIEMENT")
+        c.drawCentredString(149, 275, "REÇU DE PAIEMENT")
 
         c.setFont("Helvetica", 12)
         c.drawString(25, 240, f"Date : {paiement['date_paiement']}")
@@ -1006,8 +1006,8 @@ def recu_paiement(id):
         c.drawString(25, 80, f"Caissier(ère) : {paiement['observation']}")
 
         c.setFont("Helvetica-Oblique", 10)
-        c.drawString(25, 50, "Merci pour votre confiance!")
-        c.drawString(25, 40, "Veillez bien garder votre recu!")
+        c.drawString(25, 60, "Merci pour votre confiance!")
+        c.drawString(25, 45, "Veillez bien garder votre recu!")
         c.save()
 
         # ← Ici, ajoute la vérification
@@ -1653,26 +1653,27 @@ def finaliser_paiement(matricule, mois):
         try:
             logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
-            c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 15, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 245, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
 
-        #try:
-            #logo = ImageReader("static/logo2.png")
-            #c.saveState()
-            #c.setFillAlpha(0.08)
-            #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-            #c.restoreState()
-        #except:
-            #pass
+        # Filigrane
+        try:
+            logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
+            c.saveState()
+            c.setFillAlpha(0.1)
+            c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
+            c.restoreState()
+        except:
+            pass
 
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-        c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
-        c.drawCentredString(149, 280, "DE LA CHARITE")
+        c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
+        c.drawCentredString(149, 290, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(149, 260, "REÇU DE PAIEMENT(FINALISATION)")
+        c.drawCentredString(149, 275, "REÇU DE PAIEMENT")
         c.setFont("Helvetica", 12)
         c.drawString(25, 240, f"Date : {date_paiement}")
         c.drawString(25, 220, f"Matricule : {paiement['matricule']}")
@@ -1684,8 +1685,8 @@ def finaliser_paiement(matricule, mois):
         c.drawString(25, 100, f"Montant restant : {montant_restant:,.1f} $")
         c.drawString(25, 80, f"Caissier(ère) : {observation}")
         c.setFont("Helvetica-Oblique", 10)
-        c.drawString(25, 50, "Merci pour votre confiance!")
-        c.drawString(25, 40, "Veillez bien garder votre reçu!")
+        c.drawString(25, 60, "Merci pour votre confiance!")
+        c.drawString(25, 45, "Veillez bien garder votre reçu!")
         c.save()
 
         return redirect(url_for('imprimer_pdf') + '?url=' + url_for('recu_finalisation', matricule=matricule, mois=mois))
@@ -2667,27 +2668,28 @@ def recu_frais_etat(id):
             logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
                 
-            c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 15, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 245, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
             # Filigrane
-        #try:
-            #logo = ImageReader("static/logo2.png")
-            #c.saveState()
-            #c.setFillAlpha(0.08)
-            #c.drawImage(logo, 40, 100, width=240, height=240, preserveAspectRatio=True, mask='auto')
-            #c.restoreState()
-        #except:
-                #pass
+        # Filigrane
+        try:
+            logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
+            c.saveState()
+            c.setFillAlpha(0.1)
+            c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
+            c.restoreState()
+        except:
+            pass
 
         # Texte
         c.setFont("Helvetica-Bold", 13)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-        c.drawCentredString(149, 300, "IMMACULEE CONCEPTION")
-        c.drawCentredString(149, 280, "DE LA CHARITE")
+        c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
+        c.drawCentredString(149, 290, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(149, 260, "REÇU FRAIS DE L'ETAT")
+        c.drawCentredString(149, 275, "REÇU FRAIS DE L'ETAT")
 
         # Données
         c.setFont("Helvetica", 12)
@@ -2702,8 +2704,8 @@ def recu_frais_etat(id):
 
         # Bas de page
         c.setFont("Helvetica-Oblique", 10)
-        c.drawString(25, 110, "Merci pour votre confiance!")
-        c.drawString(25, 90, "Gardez bien votre reçu!")
+        c.drawString(25, 120, "Merci pour votre confiance!")
+        c.drawString(25, 105, "Gardez bien votre reçu!")
 
         from reportlab.pdfbase import pdfdoc
         c._doc.Catalog.OpenAction = pdfdoc.PDFDictionary({
