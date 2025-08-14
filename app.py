@@ -1537,14 +1537,13 @@ def telecharger_non_en_ordre():
 @app.route('/recu_finalisation/<matricule>/<mois>')
 @login_required
 def recu_finalisation(matricule, mois):
-    filename = f"recu_finalisation_{matricule}_{mois}.pdf"
-    folder = "recus_minerval"
-    filepath = os.path.join(folder, filename)
+    filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
 
+    # Supprime l'ancien PDF si besoin
     if os.path.exists(filepath):
-        return send_file(filepath, mimetype='application/pdf')
-    else:
-        return "Reçu introuvable", 404
+        os.remove(filepath)
 
 @app.route('/finaliser_paiement/<matricule>/<mois>', methods=['GET', 'POST'])
 @login_required
@@ -1641,17 +1640,19 @@ def finaliser_paiement(matricule, mois):
         conn.close()
 
         # ✅ Génération automatique du reçu
-        nom_complet = f"{paiement['nom']} {paiement['postnom']} {paiement['prenom']}"
-        filename = f"recu_finalisation_{paiement['matricule']}_{mois}.pdf"
-        filepath = os.path.join("recus_minerval", filename)
-        if not os.path.exists("recus_minerval"):
-            os.makedirs("recus_minerval")
+        filepath = os.path.join(DOSSIER_RECUS, "recu_finalisation")
+        if not os.path.exists(DOSSIER_RECUS):
+            os.makedirs(DOSSIER_RECUS)
+
+        # Supprime l'ancien PDF si besoin
+        if os.path.exists(filepath):
+            os.remove(filepath)
 
         c = canvas.Canvas(filepath, pagesize=A6)
 
         try:
-            logo_gauche = ImageReader("static/logo1.jpg")
-            logo_droite = ImageReader("static/logo.jpg")
+            logo_gauche = ImageReader(os.path.join(DOSSIER_STATIC,"logo1.jpg")) # ton logo à gauche
+            logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
             c.drawImage(logo_gauche, 15, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
             c.drawImage(logo_droite, 245, 305, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
