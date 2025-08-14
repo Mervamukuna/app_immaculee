@@ -38,9 +38,9 @@
             const yyyy = aujourdHui.getFullYear();
             const mm = String(aujourdHui.getMonth() + 1).padStart(2, '0');
             const dd = String(aujourdHui.getDate()).padStart(2, '0');
-            const hh = String(now.getHours()).padStart(2, '0');
-            const min = String(now.getMinutes()).padStart(2, '0');
-            const ss = String(now.getSeconds()).padStart(2, '0');
+            const hh = String(aujourdHui.getHours()).padStart(2, '0');
+            const min = String(aujourdHui.getMinutes()).padStart(2, '0');
+            const ss = String(aujourdHui.getSeconds()).padStart(2, '0');
             document.getElementById('date_paiement').value = `${yyyy}-${mm}-${dd} ${hh}:${min}:${ss}`;
 
             // ✅ Remplir l'année scolaire depuis la base (au lieu de la calculer)

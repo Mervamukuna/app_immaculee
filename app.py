@@ -3566,8 +3566,8 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         except:
             pass
         canvas.setFont("Helvetica-Bold", 16)
-        canvas.drawCentredString(largeur / 2, hauteur - 40, "COMPLEXE SCOLAIRE IMMACULÉE CONCEPTION DE LA CHARITÉ")
-        canvas.setFont("Helvetica-Bold", 14)
+        canvas.drawCentredString(largeur / 2, hauteur - 40, "COMPLEXE SCOLAIRE")
+        canvas.setFont("Helvetica-Bold", 16)
         canvas.drawCentredString(largeur / 2, hauteur - 60, "IMMACULEE CONCEPTION DE LA CHARITE")
         canvas.drawCentredString(largeur / 2, hauteur - 80, "SITUATION DE L'ÉLÈVE")
         canvas.setFont("Helvetica", 12)
