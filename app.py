@@ -415,7 +415,7 @@ def inscription():
                 logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
                 c.saveState()
                 c.setFillAlpha(0.1)
-                c.drawImage(logo, 40, 100, width=200, height=200, preserveAspectRatio=True, mask='auto')
+                c.drawImage(logo, 40, 70, width=200, height=200, preserveAspectRatio=True, mask='auto')
                 c.restoreState()
             except:
                 pass
