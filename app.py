@@ -1200,12 +1200,7 @@ def telecharger_historique_paiement():
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
-   # 🔹 Affichage dans les logs serveur pour debug
-    print("=== INFO CONNEXION PDF ===")
-    print("Host :", conn.host if hasattr(conn, 'host') else "Inconnu")
-    print("User :", conn.user if hasattr(conn, 'user') else "Inconnu")
-    print("Database :", conn.db if hasattr(conn, 'db') else "Inconnu")
-    print("==========================")
+   
     # Requête SQL dynamique avec filtres
     query = """
         SELECT p.*, e.nom, e.postnom, e.prenom, e.classe, e.section
@@ -1242,9 +1237,13 @@ def telecharger_historique_paiement():
     conn.close()
 
     # 🔽 Création du fichier PDF
-    filepath = os.path.join("recus_minerval", "historique_paiements.pdf")
+    filepath = os.path.join(DOSSIER_RECUS, "historique_paiements.pdf")
+    if not os.path.exists(DOSSIER_RECUS):
+        os.makedirs(DOSSIER_RECUS)
+
+    # Supprime l'ancien PDF si besoin
     if os.path.exists(filepath):
-        os.remove(filepath)  # 🔹 Supprime l'ancien PDF avant de créer le nouveau
+        os.remove(filepath)
 
 
     largeur, hauteur = landscape(A4)
