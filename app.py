@@ -3396,7 +3396,7 @@ def get_eleve_by_matricule(matricule):
             'genre': row[3],
             'section': row[4],
             'classe': row[5],
-            'prise_en_charge': [6]
+            'prise_en_charge': row[6]
         }
     return None
 
@@ -3591,7 +3591,7 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         canvas.drawString(30, hauteur - 120, f"Nom : {eleve['nom']} {eleve['postnom']} {eleve['prenom']}")
         canvas.drawString(320, hauteur - 120, f"Matricule : {matricule}")
         canvas.drawString(30, hauteur - 140, f"Classe : {eleve['classe']}   -   Section : {eleve['section']}")
-        canvas.drawString(400, hauteur - 140, f"Prise en charge : {eleve['prise_en_charge']}")
+        canvas.drawString(360, hauteur - 140, f"Prise en charge : {eleve['prise_en_charge']}")
         canvas.drawString(490, hauteur - 140, f"Année scolaire : {annee_scolaire}")
         canvas.setFont("Helvetica-Oblique", 9)
         canvas.drawRightString(largeur - 30, hauteur - 30, datetime.now().strftime('%d/%m/%Y %H:%M'))
