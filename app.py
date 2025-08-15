@@ -341,6 +341,7 @@ def inscription():
                 telephone_responsable = numero_brut
             fonction_responsable = request.form.get('fonction')
             statut_eleve = request.form.get('statut_eleve')
+            prise_en_charge = request.form.get('prise_en_charge','P/P')
             frais_inscription = request.form['frais_inscription']
             frais_bulletin = request.form.get('frais_bulletin')
             ram_papier = request.form.get('ram_papier')
@@ -357,15 +358,15 @@ def inscription():
                     nom, postnom, prenom, genre, section, classe,
                     annee_scolaire, date_inscription, lieu_naissance, date_naissance,
                     ecole_provenance, classe_precedente, adresse, responsable, telephone_responsable,
-                    fonction_responsable, statut_eleve, frais_inscription, ram_papier,
+                    fonction_responsable, statut_eleve, prise_en_charge, frais_inscription, ram_papier,
                     frais_bulletin, deux_savons, deux_ph, fournitures
                 )
-                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
             """, (
                 nom, postnom, prenom, genre, section, classe,
                 annee_scolaire, date_inscription, lieu_naissance, date_naissance,
                 ecole_provenance, classe_precedente, adresse, responsable, telephone_responsable,
-                fonction_responsable, statut_eleve, frais_inscription, ram_papier,
+                fonction_responsable, statut_eleve, prise_en_charge, frais_inscription, ram_papier,
                 frais_bulletin, deux_savons, deux_ph, fournitures
             ))
 
@@ -560,7 +561,7 @@ def telecharger_pdf(classe):
     conn = get_db_connection()
     curseur = conn.cursor()
     curseur.execute("""
-        SELECT matricule, nom, postnom, prenom, genre, classe, ecole_provenance, responsable, telephone_responsable, adresse 
+        SELECT matricule, nom, postnom, prenom, genre, classe, ecole_provenance, responsable, telephone_responsable, adresse, prise_en_charge 
         FROM eleves 
         WHERE classe = %s 
         ORDER BY nom ASC, postnom ASC, prenom ASC
@@ -613,7 +614,7 @@ def telecharger_pdf(classe):
     elements.append(Spacer(1, 12))
 
     # 🔹 Tableau
-    data = [["Matricule", "Nom Complet", "Genre", "Classe", "Provenance", "Responsable", "Contact", "Adresse"]]
+    data = [["Matricule", "Nom Complet", "Genre", "Classe", "Provenance", "Responsable", "Contact", "Adresse", "Prise en charge"]]
     styles = getSampleStyleSheet()
     style_normal = styles["Normal"]
 
@@ -627,10 +628,11 @@ def telecharger_pdf(classe):
             e[6] or "-",
             Paragraph(e[7], style_normal),
             e[8],
-            Paragraph(e[9] or "-", style_normal)
+            Paragraph(e[9] or "-", style_normal),
+            e[10] or "P/P"
     ])
 
-    table = Table(data, colWidths=[65, 90, 50, 70, 60, 70, 70, 70])
+    table = Table(data, colWidths=[65, 90, 50, 70, 60, 70, 70, 70, 60])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -698,6 +700,7 @@ def modifier_eleve(id):
         telephone_responsable = request.form['telephone_responsable']
         fonction_responsable = request.form['fonction_responsable']
         statut_eleve = request.form['statut_eleve']
+        prise_en_charge = request.form['prise_en_charge']
         frais_inscription = request.form['frais_inscription']
         frais_bulletin = request.form['frais_bulletin']
         ram_papier = request.form['ram_papier']
@@ -709,13 +712,13 @@ def modifier_eleve(id):
             UPDATE eleves SET 
                 nom = %s, postnom = %s, prenom = %s, genre = %s, section = %s, classe = %s, annee_scolaire = %s, 
                 lieu_naissance = %s, date_naissance = %s, ecole_provenance = %s, classe_precedente = %s,
-                responsable = %s, telephone_responsable = %s, fonction_responsable = %s, statut_eleve = %s, frais_inscription = %s, 
+                responsable = %s, telephone_responsable = %s, fonction_responsable = %s, statut_eleve = %s, prise_en_charge = %s, frais_inscription = %s, 
                 frais_bulletin = %s, ram_papier = %s, deux_savons = %s, deux_ph = %s, fournitures = %s
             WHERE id = %s
         ''', (
             nom, postnom, prenom, genre, section, classe, annee_scolaire,
             lieu_naissance, date_naissance, ecole_provenance, classe_precedente,
-            responsable, telephone_responsable, fonction_responsable, statut_eleve, frais_inscription,
+            responsable, telephone_responsable, fonction_responsable, statut_eleve, prise_en_charge, frais_inscription,
             frais_bulletin, ram_papier, deux_savons, deux_ph, fournitures,
             id
         ))

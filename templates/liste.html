@@ -166,6 +166,7 @@
               <th>Date d'inscription</th>
               <th>Responsable</th>
               <th>Contact</th>
+              <th>Prise en charge</th>
               <th>Actions</th>
             </tr>
           </thead>
@@ -182,6 +183,7 @@
                 <td>{{ eleve[9] }}</td>
                 <td>{{ eleve[14] }}</td>
                 <td>{{ eleve[15] }}</td>
+                <td>{{ eleve[25] }}</td>
                 <td>
                   <a href="{{ url_for('modifier_eleve', id=eleve[0]) }}" class="btn btn-sm btn-edit">✏️</a>
                   <a href="{{ url_for('supprimer_eleve', id=eleve[0]) }}" class="btn btn-sm btn-delete" onclick="return confirm('Confirmer la suppression ?');">🗑️</a>
