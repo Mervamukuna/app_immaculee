@@ -2496,41 +2496,28 @@ def telecharger_rapport_global_paiements():
         cursor.execute(query_ayant_paye, params_ayant)
         ayant_paye=cursor.fetchall()
         nb_ayant_paye = len(ayant_paye)
-
-    # Total attendu
-    query_tarif = """
-    SELECT t.montant, COUNT(*) as total_eleves
-    FROM eleves e
-    LEFT JOIN classes c ON e.classe = c.nom
-    LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-    WHERE (%s = '' OR e.classe = %s)
-      AND (%s = '' OR e.section = %s)
-    GROUP BY t.montant
+    # Total attendu avec prise en charge exclue
+    query_total_attendu = """
+        SELECT t.montant, COUNT(*) as nb_eleves_valides
+        FROM eleves e
+        LEFT JOIN classes c ON e.classe = c.nom
+        LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
+        WHERE (%s = '' OR e.classe = %s)
+          AND (%s = '' OR e.section = %s)
+          AND e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
+        GROUP BY t.montant
     """
-    params_tarif = [classe, classe, section, section]
+    params_attendu = [classe, classe, section, section]
 
     total_attendu = 0
-    cursor.execute(query_tarif, params_tarif)
+    cursor.execute(query_total_attendu, params_attendu)
     for ligne in cursor.fetchall():
         montant_par_eleve = ligne['montant'] or 0
-
-        # Exclure les élèves pris en charge
-        cursor.execute("""
-            SELECT COUNT(*) as nb
-            FROM eleves e
-            LEFT JOIN classes c ON e.classe = c.nom
-            LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
-            WHERE (%s = '' OR e.classe = %s)
-              AND (%s = '' OR e.section = %s)
-              AND e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
-        """, [classe, classe, section, section])
-        
-        nb_eleves_valides = cursor.fetchone()['nb'] or 0
+        nb_eleves_valides = ligne['nb_eleves_valides'] or 0
         total_attendu += montant_par_eleve * nb_eleves_valides
 
     if annee_scolaire and mois == '':
         total_attendu *= 8
-
 
     conn.close()
 
