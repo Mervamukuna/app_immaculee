@@ -1723,7 +1723,7 @@ def eleves_en_ordre():
     query = """
         SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
                p.mois, SUM(p.montant_paye) AS montant_paye,
-               p.montant_a_payer, as date_paiement
+               p.montant_a_payer, MAX(p.date_paiement) as date_paiement
         FROM paiements p
         JOIN eleves e ON p.matricule = e.matricule
         WHERE 1=1
