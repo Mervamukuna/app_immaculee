@@ -2100,7 +2100,6 @@ def statistiques_paiements():
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    # Requête principale avec ajout de nb_ayant_paye
     query = """
         SELECT 
             e.classe,
@@ -2110,7 +2109,6 @@ def statistiques_paiements():
             COUNT(DISTINCT p.matricule) AS nb_ayant_paye,
             COALESCE(SUM(p.montant_paye), 0) AS total_paye,
             t.montant AS tarif_minerval,
-            # Par :
             COALESCE(t.montant * COUNT(DISTINCT CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') THEN e.matricule END), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
@@ -2134,26 +2132,11 @@ def statistiques_paiements():
     ]
 
     cursor.execute(query, params)
-    statistiques=cursor.fetchall()
+    statistiques = cursor.fetchall()
 
-    nb_mois_par_annee = 8  # nombre de mois de Septembre à Avril
-    total_attendu_global = 0
-
-    for stat in statistiques:
-        montant_tarif = stat["tarif_minerval"] or 0
-        nb_eleves = stat["nb_eleves"] or 0
-
-        if mois == '' and annee_scolaire != '':
-            # Si on filtre par année scolaire (sans mois), on multiplie par le nombre de mois
-            total_attendu_global += montant_tarif * nb_eleves * nb_mois_par_annee
-        else:
-            # Sinon montant attendu simple (par mois)
-            total_attendu_global += montant_tarif * nb_eleves
-
-
-    # Total global
+    # ✅ Total attendu global : on utilise directement total_attendu venant de SQL
+    total_attendu_global = sum(float(r["total_attendu"]) for r in statistiques)
     total_paye_global = sum(float(r["total_paye"]) for r in statistiques)
-    #total_attendu_global = sum(float(r["total_attendu"]) for r in statistiques)
     ecart_global = total_attendu_global - total_paye_global
 
     # Récupérer classes et sections existants dans eleves
