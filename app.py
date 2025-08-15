@@ -1857,7 +1857,7 @@ def telecharger_eleves_en_ordre():
             Paragraph(nom_complet, styles["Normal"]),
             Paragraph(p['classe'], styles["Normal"]),
             p['section'],
-            Paragraph(p['prise_en_charge'] or "", styles["Normal"])
+            Paragraph(p['prise_en_charge'] or "", styles["Normal"]),
             p['mois'],
             ordre,
             Paragraph(p['observation'] or "", styles["Normal"])
