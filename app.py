@@ -3591,7 +3591,7 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         canvas.drawString(30, hauteur - 120, f"Nom : {eleve['nom']} {eleve['postnom']} {eleve['prenom']}")
         canvas.drawString(320, hauteur - 120, f"Matricule : {matricule}")
         canvas.drawString(30, hauteur - 140, f"Classe : {eleve['classe']}   -   Section : {eleve['section']}")
-        canvas.drawString(400, hauteur - 140, f"Prise en charge : {prise_en_charge}")
+        canvas.drawString(400, hauteur - 140, f"Prise en charge : {eleve['prise_en_charge']}")
         canvas.drawString(490, hauteur - 140, f"Année scolaire : {annee_scolaire}")
         canvas.setFont("Helvetica-Oblique", 9)
         canvas.drawRightString(largeur - 30, hauteur - 30, datetime.now().strftime('%d/%m/%Y %H:%M'))
