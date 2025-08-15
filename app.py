@@ -2135,7 +2135,18 @@ def statistiques_paiements():
     statistiques = cursor.fetchall()
 
     # ✅ Total attendu global : on utilise directement total_attendu venant de SQL
-    total_attendu_global = sum(float(r["total_attendu"]) for r in statistiques)
+    nb_mois_par_annee = 8  # nombre de mois de Septembre à Avril
+    total_attendu_global = 0
+
+    for stat in statistiques:
+        montant_attendu = float(stat["total_attendu"]) or 0
+
+        if mois == '' and annee_scolaire != '':
+            # Si on filtre par année scolaire (sans mois), multiplier par le nombre de mois
+            total_attendu_global += montant_attendu * nb_mois_par_annee
+        else:
+            # Sinon montant attendu simple (par mois)
+            total_attendu_global += montant_attendu
     total_paye_global = sum(float(r["total_paye"]) for r in statistiques)
     ecart_global = total_attendu_global - total_paye_global
 
