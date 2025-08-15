@@ -1369,6 +1369,7 @@ def eleves_non_en_ordre():
         FROM paiements p
         JOIN eleves e ON e.matricule = p.matricule
         WHERE 1=1
+        AND e.prise_en_charge NOT IN ('BONUS','E/E', 'PRO_DEO')
     """
     params = []
 
@@ -1720,7 +1721,7 @@ def eleves_en_ordre():
     mois = [row['mois'] for row in cursor.fetchall()]
     # Requête de base
     query = """
-        SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section,
+        SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
                p.mois, SUM(p.montant_paye) AS montant_paye,
                p.montant_a_payer, MAX(p.date_paiement) as date_paiement
         FROM paiements p
@@ -1755,9 +1756,9 @@ def eleves_en_ordre():
         SELECT * FROM (
             {query}
         ) AS sous_requete
-        WHERE montant_paye >= montant_a_payer
+        WHERE montant_paye >= montant_a_payer 
+        OR prise_en_charge IN ('BONUS', 'E/E', 'PRO_DEO')
     """
-
 
     cursor.execute(query, params)
     resultats = cursor.fetchall()
@@ -1788,7 +1789,7 @@ def telecharger_eleves_en_ordre():
     query = """
         SELECT 
             p.matricule,
-            e.nom, e.postnom, e.prenom, e.classe, e.section,
+            e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
             p.mois, 
             MAX(p.date_paiement) AS date_paiement,
             SUM(p.montant_paye) AS montant_paye,
@@ -1840,7 +1841,7 @@ def telecharger_eleves_en_ordre():
     styles = getSampleStyleSheet()
 
     data = [
-        ["N°", "Matricule", "Nom complet", "Classe", "Section", "Mois", "Ordre", "Caissière"]
+        ["N°", "Matricule", "Nom complet", "Classe", "Section","Prise en charge", "Mois", "Ordre", "Caissière"]
     ]
 
     for i, p in enumerate(paiements, start=1):
@@ -1856,12 +1857,13 @@ def telecharger_eleves_en_ordre():
             Paragraph(nom_complet, styles["Normal"]),
             Paragraph(p['classe'], styles["Normal"]),
             p['section'],
+            Paragraph(p['prise_en_charge'] or "", styles["Normal"])
             p['mois'],
             ordre,
             Paragraph(p['observation'] or "", styles["Normal"])
         ])
 
-    table = Table(data, colWidths=[30, 90, 180, 150, 60, 65, 50, 120])
+    table = Table(data, colWidths=[30, 90, 180, 150, 60, 60, 65, 50, 120])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1936,6 +1938,7 @@ def eleves_sans_paiement():
             SELECT 1 FROM paiements p
             WHERE p.matricule = e.matricule AND p.mois = %s
         )
+        AND e.prise_en_charge NOT IN ('BONUS', 'E/E', 'PRO_DEO')
     """
     params = [filtre_mois or ""]
 

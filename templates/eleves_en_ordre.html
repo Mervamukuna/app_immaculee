@@ -119,6 +119,7 @@
                     <th>Nom complet</th>
                     <th>Classe</th>
                     <th>Section</th>
+                    <th>Prise en charge</th>
                     <th>Mois</th>
                     <th>Montant payé</th>
                     <th>À payer</th>
@@ -133,6 +134,7 @@
                     <td>{{ e.nom }} {{ e.postnom }} {{ e.prenom }}</td>
                     <td>{{ e.classe }}</td>
                     <td>{{ e.section }}</td>
+                    <td>{{e.prise_en_charge}}</td>
                     <td>{{ e.mois }}</td>
                     <td class="text-success fw-bold">{{ e.montant_paye }} $</td>
                     <td class="text-muted">{{ e.montant_a_payer }} $</td>
