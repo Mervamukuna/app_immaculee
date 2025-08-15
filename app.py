@@ -2515,8 +2515,7 @@ def telecharger_rapport_global_paiements():
         montant_par_eleve = ligne['montant'] or 0
         nb_eleves_valides = ligne['nb_eleves_valides'] or 0
         total_attendu += montant_par_eleve * nb_eleves_valides
-
-    if annee_scolaire and mois == '':
+    if annee_scolaire and (mois == '' or mois is None):
         total_attendu *= 8
 
     conn.close()
