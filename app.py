@@ -2010,12 +2010,15 @@ def telecharger_sans_paiement():
     matricules_payes = set([p['matricule'] for p in paiements])
 
     # Filtrer les élèves sans paiement
+    # Filtrer les élèves sans paiement
     eleves_sans_paiement = []
     for e in tous_les_eleves:
         if e['matricule'] not in matricules_payes:
-            if (not filtre_classe or e['classe'] == filtre_classe) and \
-               (not filtre_matricule or filtre_matricule.lower() in e['matricule'].lower()):
-                eleves_sans_paiement.append(e)
+            # 🔹 On exclut ceux en prise en charge
+            if e['prise_en_charge'] not in ('BONUS', 'E/E', 'PRO_DEO'):
+                if (not filtre_classe or e['classe'] == filtre_classe) and \
+                   (not filtre_matricule or filtre_matricule.lower() in e['matricule'].lower()):
+                    eleves_sans_paiement.append(e)
 
     conn.close()
 
