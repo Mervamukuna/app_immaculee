@@ -1873,7 +1873,7 @@ def telecharger_eleves_en_ordre():
             Paragraph(p['observation'] or "", styles["Normal"])
         ])
 
-    table = Table(data, colWidths=[30, 90, 180, 150, 60, 60, 65, 50, 120])
+    table = Table(data, colWidths=[30, 90, 180, 150, 60, 70, 65, 50, 110])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
