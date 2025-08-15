@@ -2513,15 +2513,18 @@ def telecharger_rapport_global_paiements():
     cursor.execute(query_tarif, params_tarif)
     for ligne in cursor.fetchall():
         montant_par_eleve = ligne['montant'] or 0
+
         # Exclure les élèves pris en charge
         cursor.execute("""
             SELECT COUNT(*) as nb
-            FROM eleves
-            WHERE (%s = '' OR classe = %s)
-              AND (%s = '' OR section = %s)
-              AND prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
-              AND montant = %s
-        """, [classe, classe, section, section, montant_par_eleve])
+            FROM eleves e
+            LEFT JOIN classes c ON e.classe = c.nom
+            LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
+            WHERE (%s = '' OR e.classe = %s)
+              AND (%s = '' OR e.section = %s)
+              AND e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
+        """, [classe, classe, section, section])
+        
         nb_eleves_valides = cursor.fetchone()['nb'] or 0
         total_attendu += montant_par_eleve * nb_eleves_valides
 
