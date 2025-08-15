@@ -1794,17 +1794,16 @@ def telecharger_eleves_en_ordre():
     # Requête SQL dynamique avec filtres
     query = """
         SELECT 
-            p.matricule,
+            e.matricule,
             e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
             p.mois, 
             MAX(p.date_paiement) AS date_paiement,
-            SUM(p.montant_paye) AS montant_paye,
-            MAX(p.montant_a_payer) AS montant_a_payer,
+            COALESCE(SUM(p.montant_paye),0) AS montant_paye,
+            COALESCE(MAX(p.montant_a_payer),0) AS montant_a_payer,
             p.observation
-        FROM paiements p
-        JOIN eleves e ON p.matricule = e.matricule
+        FROM eleves e
+        LEFT JOIN paiements p ON p.matricule = e.matricule
         WHERE 1=1
-
     """
     params = []
 
@@ -1828,7 +1827,7 @@ def telecharger_eleves_en_ordre():
         query += " AND p.observation = %s"
         params.append(filtre_caissier)
 
-    query += " GROUP BY p.matricule, p.mois HAVING SUM(p.montant_paye) >= MAX(p.montant_a_payer) ORDER BY p.date_paiement DESC"
+    query += " GROUP BY e.matricule, p.mois HAVING montant_paye >= montant_a_payer OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO') ORDER BY date_paiement DESC"
     
     cursor.execute(query, params)
     paiements = cursor.fetchall()
