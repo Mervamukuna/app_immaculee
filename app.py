@@ -631,7 +631,7 @@ def telecharger_pdf(classe):
             e[9] or "P/P"
     ])
 
-    table = Table(data, colWidths=[65, 90, 50, 60, 70, 70, 70, 70])
+    table = Table(data, colWidths=[65, 90, 45, 60, 70, 70, 70, 75])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
@@ -1851,7 +1851,7 @@ def telecharger_eleves_en_ordre():
     styles = getSampleStyleSheet()
 
     data = [
-        ["N°", "Matricule", "Nom complet", "Classe", "Section","Prise en charge", "Mois", "Ordre", "Caissière"]
+        ["N°", "Matricule", "Nom complet", "Classe", "Section","Prise en charge", "Mois", "Ordre", "Caissier(ère)"]
     ]
 
     for i, p in enumerate(paiements, start=1):
@@ -2605,7 +2605,6 @@ def enregistrer_frais_etat():
         # Récupérer section et annee_scolaire de l'élève
         cursor.execute("SELECT section, annee_scolaire FROM eleves WHERE matricule = %s", (matricule,))
         eleve_info = cursor.fetchone()
-
         if eleve_info:
             section = eleve_info['section']
             annee_scolaire = eleve_info['annee_scolaire']
@@ -2889,7 +2888,7 @@ def exporter_frais_etat_pdf():
     styles = getSampleStyleSheet()
 
     data = [
-        ["N°", "Matricule", "Nom complet", "Genre", "Section", "Classe", "Tranche", "Montant (FC)", "Date", "Caissier"]
+        ["N°", "Matricule", "Nom complet", "Genre", "Section", "Classe", "Tranche", "Montant (FC)", "Date", "Caissier(ère)"]
     ]
 
     total_montant = 0
@@ -3150,7 +3149,7 @@ def exporter_historique_achats_pdf():
 
     data = [
         ["N°", "Matricule", "Nom complet", "Section", "Classe", "Article",
-         "Quantité", "Prix unitaire ($)", "Total ($)", "Date achat", "Caissier"]
+         "Quantité", "Prix unitaire ($)", "Total ($)", "Date achat", "Caissier(ère)"]
     ]
 
     total_general = 0
@@ -3386,7 +3385,7 @@ def imprimer_pdf():
 def get_eleve_by_matricule(matricule):
     conn = get_db_connection()
     cur = conn.cursor()
-    cur.execute("SELECT nom, postnom, prenom, genre, section, classe FROM eleves WHERE matricule = %s", (matricule,))
+    cur.execute("SELECT nom, postnom, prenom, genre, section, classe, prise_en_charge FROM eleves WHERE matricule = %s", (matricule,))
     row = cur.fetchone()
     conn.close()
     if row:
@@ -3396,7 +3395,8 @@ def get_eleve_by_matricule(matricule):
             'prenom': row[2],
             'genre': row[3],
             'section': row[4],
-            'classe': row[5]
+            'classe': row[5],
+            'prise_en_charge': [6]
         }
     return None
 
@@ -3590,8 +3590,9 @@ def telecharger_situation_eleve(matricule, annee_scolaire):
         canvas.setFont("Helvetica", 12)
         canvas.drawString(30, hauteur - 120, f"Nom : {eleve['nom']} {eleve['postnom']} {eleve['prenom']}")
         canvas.drawString(320, hauteur - 120, f"Matricule : {matricule}")
-        canvas.drawString(30, hauteur - 140, f"Classe : {eleve['classe']} - Section : {eleve['section']}")
-        canvas.drawString(420, hauteur - 140, f"Année scolaire : {annee_scolaire}")
+        canvas.drawString(30, hauteur - 140, f"Classe : {eleve['classe']}   -   Section : {eleve['section']}")
+        canvas.drawString(400, hauteur - 140, f"Prise en charge : {prise_en_charge}")
+        canvas.drawString(490, hauteur - 140, f"Année scolaire : {annee_scolaire}")
         canvas.setFont("Helvetica-Oblique", 9)
         canvas.drawRightString(largeur - 30, hauteur - 30, datetime.now().strftime('%d/%m/%Y %H:%M'))
 

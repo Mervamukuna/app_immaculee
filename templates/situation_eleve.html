@@ -48,6 +48,8 @@
                 <li class="list-group-item"><strong>Genre :</strong> {{ eleve.genre }}</li>
                 <li class="list-group-item"><strong>Section :</strong> {{ eleve.section }}</li>
                 <li class="list-group-item"><strong>Classe :</strong> {{ eleve.classe }}</li>
+                <li class="list-group-item"><strong>Prise en charge :</strong> {{ eleve.prise_en_charge }}</li>
+
             </ul>
             <div class="mt-3 d-flex gap-2">
                 <a href="{{ url_for('imprimer_pdf') }}?url={{ url_for('telecharger_situation_eleve', matricule=matricule, annee_scolaire=annee_scolaire) }}" class="btn btn-success" style="background-color:#114199;">
