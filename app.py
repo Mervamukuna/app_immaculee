@@ -2396,6 +2396,7 @@ def rapport_global_paiements():
     nb_ayant_paye = len(set([p['matricule'] for p in ayant_paye]))
 
     # Total attendu
+    # Total attendu
     query_tarif = """
         SELECT t.montant, COUNT(DISTINCT e.matricule) as total_eleves
         FROM eleves e
@@ -2404,6 +2405,7 @@ def rapport_global_paiements():
         LEFT JOIN tarifs t ON t.classe_id = c.id AND t.type = 'minerval'
         WHERE (%s = '' OR e.classe = %s)
           AND (%s = '' OR s.nom = %s)
+          AND e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
         GROUP BY t.montant
     """
     params_tarif = [classe, classe, section, section]
@@ -2511,7 +2513,18 @@ def telecharger_rapport_global_paiements():
     cursor.execute(query_tarif, params_tarif)
     for ligne in cursor.fetchall():
         montant_par_eleve = ligne['montant'] or 0
-        total_attendu += montant_par_eleve * ligne['total_eleves']
+        # Exclure les élèves pris en charge
+        cursor.execute("""
+            SELECT COUNT(*) as nb
+            FROM eleves
+            WHERE (%s = '' OR classe = %s)
+              AND (%s = '' OR section = %s)
+              AND prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO')
+              AND montant = %s
+        """, [classe, classe, section, section, montant_par_eleve])
+        nb_eleves_valides = cursor.fetchone()['nb'] or 0
+        total_attendu += montant_par_eleve * nb_eleves_valides
+
     if annee_scolaire and mois == '':
         total_attendu *= 8
 
