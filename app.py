@@ -1808,7 +1808,7 @@ def telecharger_eleves_en_ordre():
     params = []
 
     if filtre_matricule:
-        query += " AND p.matricule LIKE %s"
+        query += " AND e.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
     if filtre_classe:
@@ -1816,18 +1816,23 @@ def telecharger_eleves_en_ordre():
         params.append(filtre_classe)
 
     if filtre_mois:
-        query += " AND p.mois = %s"
+        query += " AND (p.mois = %s OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO'))"
         params.append(filtre_mois)
 
     if filtre_jour:
-        query += " AND p.date_paiement = %s"
+        query += " AND (p.date_paiement = %s OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO'))"
         params.append(filtre_jour)
 
     if filtre_caissier:
-        query += " AND p.observation = %s"
+        query += " AND (p.observation = %s OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO'))"
         params.append(filtre_caissier)
 
-    query += " GROUP BY e.matricule, p.mois HAVING montant_paye >= montant_a_payer OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO') ORDER BY date_paiement DESC"
+    query += """
+        GROUP BY e.matricule, p.mois
+        HAVING montant_paye >= montant_a_payer
+           OR e.prise_en_charge IN ('BONUS','E/E','PRO_DEO')
+        ORDER BY date_paiement DESC
+    """
     
     cursor.execute(query, params)
     paiements = cursor.fetchall()
