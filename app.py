@@ -1719,39 +1719,45 @@ def eleves_en_ordre():
 
     cursor.execute("SELECT DISTINCT mois FROM paiements")
     mois = [row['mois'] for row in cursor.fetchall()]
-    # Requête de base
-    query = """
-        SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
-               p.mois, SUM(p.montant_paye) AS montant_paye,
-               p.montant_a_payer, MAX(p.date_paiement) as date_paiement
-        FROM paiements p
-        JOIN eleves e ON p.matricule = e.matricule
-        WHERE 1=1
-    """
-    params = []
 
-    # 🔍 Filtres dynamiques
+    # 🔄 Filtrage
     if request.method == 'POST':
         filtre_matricule = request.form.get('filtre_matricule', '').strip()
         filtre_classe = request.form.get('filtre_classe', '')
         filtre_mois = request.form.get('filtre_mois', '')
 
+    # Requête de base
+    query = """
+        SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
+               p.mois, COALESCE(SUM(p.montant_paye), 0) AS montant_paye,
+               COALESCE(SUM(p.montant_a_payer), 0) AS montant_a_payer, MAX(p.date_paiement) as date_paiement
+        FROM eleves e
+        LEFT JOIN paiements p ON p.matricule = e.matricule
+        WHERE 1=1
+    """
+    params = []
+
+    # 🔍 Filtre matricule
     if filtre_matricule:
         query += " AND e.matricule LIKE %s"
         params.append(f"%{filtre_matricule}%")
 
+    # 🔍 Filtre classe
     if filtre_classe:
         query += " AND e.classe = %s"
         params.append(filtre_classe)
 
+    # 🔍 Filtre mois seulement pour les élèves normaux
     if filtre_mois:
-        query += " AND p.mois = %s"
+        query += """
+        AND (p.mois = %s OR e.prise_en_charge IN ('BONUS', 'E/E', 'PRO_DEO'))
+        """
         params.append(filtre_mois)
 
-    # 🔄 Groupement
-    query += " GROUP BY e.matricule, p.mois"
+    # 🔄 Groupement par élève
+    query += " GROUP BY e.matricule"
 
-    # ✅ Filtrer ceux qui ont payé en totalité
+    # ✅ Ne garder que ceux qui ont payé ou sont en prise en charge
     query = f"""
         SELECT * FROM (
             {query}
