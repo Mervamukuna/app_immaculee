@@ -2203,7 +2203,7 @@ def telecharger_statistiques_paiements():
                 AND (%s = '' OR p2.mois = %s)
                 AND (%s = '' OR p2.annee_scolaire = %s)
             ), 0) AS total_paye,
-            COALESCE(t.montant * COUNT(DISTINCT e.matricule), 0) AS total_attendu
+            COALESCE(t.montant * COUNT(DISTINCT CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') THEN e.matricule END), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
