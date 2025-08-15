@@ -561,7 +561,7 @@ def telecharger_pdf(classe):
     conn = get_db_connection()
     curseur = conn.cursor()
     curseur.execute("""
-        SELECT matricule, nom, postnom, prenom, genre, classe, ecole_provenance, responsable, telephone_responsable, adresse, prise_en_charge 
+        SELECT matricule, nom, postnom, prenom, genre, ecole_provenance, responsable, telephone_responsable, adresse, prise_en_charge 
         FROM eleves 
         WHERE classe = %s 
         ORDER BY nom ASC, postnom ASC, prenom ASC
@@ -614,7 +614,7 @@ def telecharger_pdf(classe):
     elements.append(Spacer(1, 12))
 
     # 🔹 Tableau
-    data = [["Matricule", "Nom Complet", "Genre", "Classe", "Provenance", "Responsable", "Contact", "Adresse", "Prise en charge"]]
+    data = [["Matricule", "Nom Complet", "Genre", "Provenance", "Responsable", "Contact", "Adresse", "Prise en charge"]]
     styles = getSampleStyleSheet()
     style_normal = styles["Normal"]
 
@@ -624,15 +624,14 @@ def telecharger_pdf(classe):
             e[0],
             Paragraph(nom_complet, style_normal),
             e[4],
-            Paragraph(e[5], style_normal),
-            e[6] or "-",
-            Paragraph(e[7], style_normal),
-            e[8],
-            Paragraph(e[9] or "-", style_normal),
-            e[10] or "P/P"
+            e[5] or "-",
+            Paragraph(e[6], style_normal),
+            e[7],
+            Paragraph(e[8] or "-", style_normal),
+            e[9] or "P/P"
     ])
 
-    table = Table(data, colWidths=[65, 90, 50, 70, 60, 70, 70, 70, 60])
+    table = Table(data, colWidths=[65, 90, 50, 60, 70, 70, 70, 70])
     table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#003366")),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
