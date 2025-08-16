@@ -974,8 +974,8 @@ def recu_paiement(id):
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
 
                 # Logos gauche et droite
-            c.drawImage(logo_gauche, 5, 250, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 140, 250, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 5, 265, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 155, 265, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
         
