@@ -989,14 +989,14 @@ def recu_paiement(id):
         except:
             pass
         # Texte
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont("Helvetica-Bold", 9)
         c.drawCentredString(120, 320, "COMPLEXE SCOLAIRE")
         c.drawCentredString(120, 305, "IMMACULEE CONCEPTION")
         c.drawCentredString(120, 290, "DE LA CHARITE")
-        c.setFont("Helvetica-Bold", 11)
+        c.setFont("Helvetica-Bold", 9)
         c.drawCentredString(120, 275, "REÇU DE PAIEMENT")
 
-        c.setFont("Helvetica", 11)
+        c.setFont("Helvetica",9)
         c.drawString(10, 240, f"Date : {paiement['date_paiement']}")
         c.drawString(10, 220, f"Matricule : {paiement['matricule']}")
         c.drawString(10, 200, f"Nom complet : {nom_complet}")
@@ -1007,7 +1007,7 @@ def recu_paiement(id):
         c.drawString(10, 100, f"Montant restant : {montant_restant:,.1f} $")
         c.drawString(10, 80, f"Caissier(ère) : {paiement['observation']}")
 
-        c.setFont("Helvetica-Oblique", 10)
+        c.setFont("Helvetica-Oblique", 8)
         c.drawString(10, 60, "Merci pour votre confiance!")
         c.drawString(10, 45, "Veillez bien garder votre recu!")
         c.save()
