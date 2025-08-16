@@ -2762,59 +2762,77 @@ def liste_frais_etat():
     classe = request.args.get('classe', '').strip()
     section = request.args.get('section', '').strip()
     ordre = request.args.get('ordre', '').strip()  # "Oui" ou "Non"
-    caissier = request.args.get('caissier', '').strip()
-    tranche = request.args.get('tranche', '').strip()
+    tranche_filtre = request.args.get('tranche', '').strip()
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    # ✅ On récupère chaque paiement séparément
-    query = """
-    SELECT 
-        e.matricule, e.nom, e.postnom, e.prenom, e.genre, e.classe, e.section,
-        f.montant, f.date_paiement, f.tranche, f.caissier, f.annee_scolaire
-    FROM frais_etat f
-    JOIN eleves e ON e.matricule = f.matricule
-    WHERE 1=1
-    """
-
+    # 1️⃣ Récupérer tous les élèves
+    query = "SELECT matricule, nom, postnom, prenom, genre, classe, section FROM eleves WHERE 1=1"
     params = []
 
-    # Filtres dynamiques
     if matricule:
-        query += " AND e.matricule LIKE %s"
+        query += " AND matricule LIKE %s"
         params.append(f"%{matricule}%")
     if classe:
-        query += " AND e.classe = %s"
+        query += " AND classe = %s"
         params.append(classe)
     if section:
-        query += " AND e.section = %s"
+        query += " AND section = %s"
         params.append(section)
-    if tranche:
-        query += " AND f.tranche = %s"
-        params.append(tranche)
-    if caissier:
-        query += " AND f.caissier LIKE %s"
-        params.append(f"%{caissier}%")
-
-    query += " ORDER BY f.date_paiement DESC"
 
     cursor.execute(query, params)
-    paiements = cursor.fetchall()
+    eleves = cursor.fetchall()
+
+    # 2️⃣ Construire historique : 2 lignes par élève
+    historique = []
+    for eleve in eleves:
+        for tranche in ["Tranche 1", "Tranche 2"]:
+            cursor.execute("""
+                SELECT montant, date_paiement, caissier
+                FROM frais_etat
+                WHERE matricule = %s AND tranche = %s
+                ORDER BY date_paiement DESC LIMIT 1
+            """, (eleve['matricule'], tranche))
+            paiement = cursor.fetchone()
+
+            if paiement:
+                montant = paiement['montant']
+                date_paiement = paiement['date_paiement']
+                caissier = paiement['caissier']
+                en_ordre = "Oui"
+            else:
+                montant = 0
+                date_paiement = None
+                caissier = None
+                en_ordre = "Non"
+
+            ligne = {
+                "matricule": eleve['matricule'],
+                "nom": eleve['nom'],
+                "postnom": eleve['postnom'],
+                "prenom": eleve['prenom'],
+                "genre": eleve['genre'],
+                "classe": eleve['classe'],
+                "section": eleve['section'],
+                "tranche": tranche,
+                "montant": montant,
+                "date_paiement": date_paiement,
+                "caissier": caissier,
+                "ordre": en_ordre
+            }
+
+            # 3️⃣ Appliquer les filtres tranche + ordre
+            if tranche_filtre and tranche != tranche_filtre:
+                continue
+            if ordre and ligne["ordre"] != ordre:
+                continue
+
+            historique.append(ligne)
+
     conn.close()
 
-    # 🔎 Gestion du filtre "ordre"
-    paiements_filtres = []
-    for p in paiements:
-        est_en_ordre = p['montant'] > 0
-        if ordre:
-            if ordre == "Oui" and not est_en_ordre:
-                continue
-            if ordre == "Non" and est_en_ordre:
-                continue
-        paiements_filtres.append(p)
-
-    # Récupérer toutes les classes et sections pour le filtre
+    # 4️⃣ Récupérer toutes les classes et sections pour les filtres
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT classe FROM eleves ORDER BY classe")
@@ -2824,7 +2842,7 @@ def liste_frais_etat():
     conn.close()
 
     return render_template("liste_frais_etat.html",
-                           paiements=paiements_filtres,
+                           eleves=historique,
                            classes=classes,
                            sections=sections)
 
