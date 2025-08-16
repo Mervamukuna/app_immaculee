@@ -2149,7 +2149,7 @@ def statistiques_paiements():
             stat["total_attendu"] = montant_attendu
 
         stat["total_paye"] = total_paye
-        
+
         if mois == '' and annee_scolaire != '':
             # Si on filtre par année scolaire (sans mois), multiplier par le nombre de mois
             total_attendu_global += montant_attendu * nb_mois_par_annee
@@ -2205,13 +2205,16 @@ def telecharger_statistiques_paiements():
             %s AS mois,
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_payeurs,
-            COALESCE((
-                SELECT SUM(p2.montant_paye)
-                FROM paiements p2
-                WHERE p2.matricule = e.matricule
-                AND (%s = '' OR p2.mois = %s)
-                AND (%s = '' OR p2.annee_scolaire = %s)
-            ), 0) AS total_paye,
+            CASE 
+                WHEN e.prise_en_charge IN ('BONUS','E/E','PRO_DEO') THEN 0
+                ELSE COALESCE((
+                    SELECT SUM(p2.montant_paye)
+                    FROM paiements p2
+                    WHERE p2.matricule = e.matricule
+                    AND (%s = '' OR p2.mois = %s)
+                    AND (%s = '' OR p2.annee_scolaire = %s)
+                ), 0)
+            END AS total_paye
             COALESCE(t.montant * COUNT(DISTINCT CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') THEN e.matricule END), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
@@ -2239,8 +2242,13 @@ def telecharger_statistiques_paiements():
     cursor.execute(query, params)
     rows=cursor.fetchall()
     rows = [dict(row) for row in rows]  # convertit en dict modifiable
-    if annee_scolaire and (mois == '' or mois is None):
-        for row in rows:
+    for row in rows:
+        # Total payé exact par élève, même s'il y a des élèves pris en charge dans la même classe
+        row["total_paye"] = float(row["total_paye"] or 0)
+        row["total_attendu"] = float(row["total_attendu"] or 0)
+        
+        # Ajustement pour l'année scolaire si le mois n'est pas filtré
+        if annee_scolaire and (mois == '' or mois is None):
             row["total_attendu"] *= 8
 
     conn.close()
