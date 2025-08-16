@@ -2767,6 +2767,8 @@ def liste_frais_etat():
     section = request.args.get('section', '').strip()
     ordre = request.args.get('ordre', '').strip()  # "Oui" ou "Non"
     tranche_filtre = request.args.get('tranche', '').strip()
+    page = int(request.args.get('page', 1))  # page actuelle, défaut = 1
+    per_page = 20  # nombre de lignes par page
 
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
@@ -2843,12 +2845,21 @@ def liste_frais_etat():
     classes = [row[0] for row in cursor.fetchall()]
     cursor.execute("SELECT DISTINCT section FROM eleves ORDER BY section")
     sections = [row[0] for row in cursor.fetchall()]
+    total = len(historique)  # nombre total de lignes
+    start = (page - 1) * per_page
+    end = start + per_page
+    historique_page = historique[start:end]
     conn.close()
 
-    return render_template("liste_frais_etat.html",
-                           eleves=historique,
-                           classes=classes,
-                           sections=sections)
+    return render_template(
+        "liste_frais_etat.html",
+        eleves=historique_page,  # <-- on passe seulement la page courante
+        classes=classes,
+        sections=sections,
+        page=page,
+        per_page=per_page,
+        total=total
+    )
 
 @app.route('/exporter_frais_etat_pdf')
 @login_required
