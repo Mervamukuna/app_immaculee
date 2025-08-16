@@ -2217,7 +2217,10 @@ def telecharger_statistiques_paiements():
                 ), 0)
             END
         ) AS total_paye,
-            COALESCE(SUM(CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') THEN t.montant ELSE 0 END), 0) AS total_attendu
+            COALESCE(
+                COUNT(DISTINCT CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') 
+                    THEN e.matricule END) * t.montant, 
+            0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
         JOIN sections s ON c.section_id = s.id
