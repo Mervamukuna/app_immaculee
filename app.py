@@ -975,7 +975,7 @@ def recu_paiement(id):
 
                 # Logos gauche et droite
             c.drawImage(logo_gauche, 5, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 190, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 140, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
         
