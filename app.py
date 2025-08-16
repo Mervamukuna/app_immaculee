@@ -990,11 +990,11 @@ def recu_paiement(id):
             pass
         # Texte
         c.setFont("Helvetica-Bold", 11)
-        c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
-        c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
-        c.drawCentredString(149, 290, "DE LA CHARITE")
+        c.drawCentredString(120, 320, "COMPLEXE SCOLAIRE")
+        c.drawCentredString(120, 305, "IMMACULEE CONCEPTION")
+        c.drawCentredString(120, 290, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 11)
-        c.drawCentredString(149, 275, "REÇU DE PAIEMENT")
+        c.drawCentredString(120, 275, "REÇU DE PAIEMENT")
 
         c.setFont("Helvetica", 11)
         c.drawString(10, 240, f"Date : {paiement['date_paiement']}")
