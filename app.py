@@ -3068,7 +3068,8 @@ def historique_achats():
     filtre_classe = request.args.get('classe', '').strip()
     filtre_caissier = request.args.get('caissier', '').strip()
     filtre_article = request.args.get('article', '').strip()
-
+    page = int(request.args.get('page', 1))  # page actuelle, défaut = 1
+    per_page = 20  # nombre de lignes par page
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
@@ -3082,26 +3083,38 @@ def historique_achats():
     """
     params = []
 
+    # Compter le total des résultats pour la pagination
+    count_query = "SELECT COUNT(*) AS total FROM achats_articles aa JOIN eleves e ON aa.matricule = e.matricule JOIN articles a ON aa.code_article = a.code WHERE 1=1"
+    count_params = []
+
     if filtre_matricule:
-        query += " AND aa.matricule LIKE %s"
-        params.append(f"%{filtre_matricule}%")
+        count_query += " AND aa.matricule LIKE %s"
+        count_params.append(f"%{filtre_matricule}%")
     if filtre_section:
-        query += " AND e.section = %s"
-        params.append(filtre_section)
+        count_query += " AND e.section = %s"
+        count_params.append(filtre_section)
     if filtre_classe:
-        query += " AND e.classe = %s"
-        params.append(filtre_classe)
+        count_query += " AND e.classe = %s"
+        count_params.append(filtre_classe)
     if filtre_caissier:
-        query += " AND aa.caissier LIKE %s"
-        params.append(f"%{filtre_caissier}%")
+        count_query += " AND aa.caissier LIKE %s"
+        count_params.append(f"%{filtre_caissier}%")
     if filtre_article:
-        query += " AND a.nom LIKE %s"
-        params.append(f"%{filtre_article}%")
+        count_query += " AND a.nom LIKE %s"
+        count_params.append(f"%{filtre_article}%")
+
+    cursor.execute(count_query, count_params)
+    total_results = cursor.fetchone()['total']
+    total_pages = (total_results + PER_PAGE - 1) // PER_PAGE
 
     query += " ORDER BY aa.date_achat DESC"
 
+    offset = (page - 1) * PER_PAGE
+    query += " LIMIT %s OFFSET %s"
+    params.extend([PER_PAGE, offset])
+
     cursor.execute(query, params)
-    achats=cursor.fetchall()
+    achats = cursor.fetchall()
 
     # Pour les listes déroulantes de filtres, récupérer les valeurs uniques
     cursor.execute("SELECT DISTINCT section FROM eleves")
@@ -3115,16 +3128,20 @@ def historique_achats():
 
     conn.close()
 
-    return render_template("historique_achats.html",
-                           achats=achats,
-                           sections=sections,
-                           classes=classes,
-                           articles=articles,
-                           filtre_matricule=filtre_matricule,
-                           filtre_section=filtre_section,
-                           filtre_classe=filtre_classe,
-                           filtre_caissier=filtre_caissier,
-                           filtre_article=filtre_article)
+    return render_template(
+        "historique_achats.html",
+        achats=achats,
+        sections=sections,
+        classes=classes,
+        articles=articles,
+        filtre_matricule=filtre_matricule,
+        filtre_section=filtre_section,
+        filtre_classe=filtre_classe,
+        filtre_caissier=filtre_caissier,
+        filtre_article=filtre_article,
+        page=page,
+        total_pages=total_pages
+    )
 
 @app.route('/exporter_historique_achats_pdf')
 @login_required
