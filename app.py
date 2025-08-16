@@ -2205,18 +2205,7 @@ def telecharger_statistiques_paiements():
             %s AS mois,
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_payeurs,
-            SUM(
-            CASE 
-                WHEN e.prise_en_charge IN ('BONUS','E/E','PRO_DEO') THEN 0
-                ELSE COALESCE((
-                    SELECT SUM(p2.montant_paye)
-                    FROM paiements p2
-                    WHERE p2.matricule = e.matricule
-                    AND (%s = '' OR p2.mois = %s)
-                    AND (%s = '' OR p2.annee_scolaire = %s)
-                ), 0)
-            END
-        ) AS total_paye,
+            COALESCE(SUM(DISTINCT p.montant_paye), 0) AS total_paye,
             COALESCE(
                 COUNT(DISTINCT CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') 
                     THEN e.matricule END) * t.montant, 
