@@ -3105,13 +3105,13 @@ def historique_achats():
 
     cursor.execute(count_query, count_params)
     total_results = cursor.fetchone()['total']
-    total_pages = (total_results + PER_PAGE - 1) // PER_PAGE
+    total_pages = (total_results + per_page - 1) // per_page
 
     query += " ORDER BY aa.date_achat DESC"
 
-    offset = (page - 1) * PER_PAGE
+    offset = (page - 1) * per_page
     query += " LIMIT %s OFFSET %s"
-    params.extend([PER_PAGE, offset])
+    params.extend([per_page, offset])
 
     cursor.execute(query, params)
     achats = cursor.fetchall()
