@@ -2930,8 +2930,8 @@ def exporter_frais_etat_pdf():
             Paragraph(row['classe'], styles["Normal"]),
             row['tranche'] if row['tranche'] else "—",
             f"{montant:,.1f}",
-            row['date_paiement'] if row['date_paiement'] else "—",
-            row['caissier'] if row['caissier'] else "—",
+            Paragraph(row['date_paiement'] if row['date_paiement'] else "—", styles["Normal"]),
+            Paragraph(row['caissier'] if row['caissier'] else "—", styles["Normal"])
         ])
 
     table = Table(data, colWidths=[1.2*cm, 2.5*cm, 5*cm, 2*cm, 3*cm, 2.5*cm, 2*cm, 3*cm, 2*cm, 2.5*cm])
