@@ -2658,7 +2658,7 @@ def enregistrer_frais_etat():
             conn.close()
             message = f"❌ Aucun élève trouvé avec le matricule {matricule}."
 
-    return render_template("enregistrer_frais_etat.html", message=message, current_date=datetime.now().strftime('%Y-%m-%d'),)
+    return render_template("enregistrer_frais_etat.html", message=message, current_date=datetime.now().strftime('%Y-%m-%d %H:%M'),)
 
 @app.route('/recu_frais_etat/<int:id>')
 @login_required
@@ -2768,23 +2768,19 @@ def liste_frais_etat():
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
-    # On commence par récupérer tous les élèves avec leur total payé, tranche et caissier du dernier paiement
-    # Cette requête rassemble l'élève avec la somme des paiements et les infos du dernier paiement (tranche et caissier)
+    # ✅ On récupère chaque paiement séparément
     query = """
     SELECT 
         e.matricule, e.nom, e.postnom, e.prenom, e.genre, e.classe, e.section,
-        IFNULL(SUM(f.montant), 0) AS total_paye,
-        MAX(f.date_paiement) AS derniere_date,
-        (SELECT f2.tranche FROM frais_etat f2 WHERE f2.matricule = e.matricule ORDER BY f2.date_paiement DESC LIMIT 1) AS tranche,
-        (SELECT f3.caissier FROM frais_etat f3 WHERE f3.matricule = e.matricule ORDER BY f3.date_paiement DESC LIMIT 1) AS caissier
-    FROM eleves e
-    LEFT JOIN frais_etat f ON e.matricule = f.matricule
+        f.montant, f.date_paiement, f.tranche, f.caissier, f.annee_scolaire
+    FROM frais_etat f
+    JOIN eleves e ON e.matricule = f.matricule
     WHERE 1=1
     """
 
     params = []
 
-    # Filtres sur eleves
+    # Filtres dynamiques
     if matricule:
         query += " AND e.matricule LIKE %s"
         params.append(f"%{matricule}%")
@@ -2794,35 +2790,31 @@ def liste_frais_etat():
     if section:
         query += " AND e.section = %s"
         params.append(section)
+    if tranche:
+        query += " AND f.tranche = %s"
+        params.append(tranche)
+    if caissier:
+        query += " AND f.caissier LIKE %s"
+        params.append(f"%{caissier}%")
 
-    query += " GROUP BY e.matricule"
-
-    # On appliquera les filtres tranche, caissier, ordre en Python après récupération car liés à frais_etat
+    query += " ORDER BY f.date_paiement DESC"
 
     cursor.execute(query, params)
-    eleves = cursor.fetchall()
-
-    # Filtrage supplémentaire en Python
-    eleves_filtres = []
-    for eleve in eleves:
-        # filtre tranche
-        if tranche and (eleve['tranche'] != tranche):
-            continue
-        # filtre caissier
-        if caissier and (eleve['caissier'] is None or caissier.lower() not in eleve['caissier'].lower()):
-            continue
-        # filtre ordre
-        est_en_ordre = eleve['total_paye'] > 0
-        if ordre:
-            if ordre == 'Oui' and not est_en_ordre:
-                continue
-            if ordre == 'Non' and est_en_ordre:
-                continue
-        eleves_filtres.append(eleve)
-
+    paiements = cursor.fetchall()
     conn.close()
 
-    # Récupérer toutes les classes et sections pour le filtre (optionnel, à adapter selon ta base)
+    # 🔎 Gestion du filtre "ordre"
+    paiements_filtres = []
+    for p in paiements:
+        est_en_ordre = p['montant'] > 0
+        if ordre:
+            if ordre == "Oui" and not est_en_ordre:
+                continue
+            if ordre == "Non" and est_en_ordre:
+                continue
+        paiements_filtres.append(p)
+
+    # Récupérer toutes les classes et sections pour le filtre
     conn = get_db_connection()
     cursor = conn.cursor()
     cursor.execute("SELECT DISTINCT classe FROM eleves ORDER BY classe")
@@ -2832,7 +2824,7 @@ def liste_frais_etat():
     conn.close()
 
     return render_template("liste_frais_etat.html",
-                           eleves=eleves_filtres,
+                           paiements=paiements_filtres,
                            classes=classes,
                            sections=sections)
 
