@@ -1490,7 +1490,7 @@ def telecharger_non_en_ordre():
             r['mois'],
             f"{r['total_paye']:,.1f} $",
             f"{r['total_a_payer']:,.1f} $",
-            r['derniere_date']
+            Paragraph(r['derniere_date'], styles["Normal"])
         ])
 
     table = Table(data, colWidths=[30, 90, 170, 110, 70, 70, 80, 60, 70])
@@ -1676,7 +1676,7 @@ def finaliser_paiement(matricule, mois):
         c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
         c.drawCentredString(149, 290, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 12)
-        c.drawCentredString(149, 275, "REÇU DE PAIEMENT")
+        c.drawCentredString(149, 275, "REÇU DE PAIEMENT(Fi)")
         c.setFont("Helvetica", 12)
         c.drawString(25, 240, f"Date : {date_paiement}")
         c.drawString(25, 220, f"Matricule : {paiement['matricule']}")
@@ -1730,7 +1730,7 @@ def eleves_en_ordre():
     query = """
         SELECT e.matricule, e.nom, e.postnom, e.prenom, e.classe, e.section, e.prise_en_charge,
                p.mois, COALESCE(SUM(p.montant_paye), 0) AS montant_paye,
-               COALESCE(SUM(p.montant_a_payer), 0) AS montant_a_payer, MAX(p.date_paiement) as date_paiement
+               MAX(p.montant_a_payer) AS montant_a_payer, MAX(p.date_paiement) as date_paiement
         FROM eleves e
         LEFT JOIN paiements p ON p.matricule = e.matricule
         WHERE 1=1
