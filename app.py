@@ -2140,6 +2140,10 @@ def statistiques_paiements():
 
     for stat in statistiques:
         montant_attendu = float(stat["total_attendu"]) or 0
+        rows = [dict(row) for row in rows]  # convertit en dict modifiable
+        if annee_scolaire and (mois == '' or mois is None):
+            for row in rows:
+                row["total_attendu"] *= 8
 
         if mois == '' and annee_scolaire != '':
             # Si on filtre par année scolaire (sans mois), multiplier par le nombre de mois
