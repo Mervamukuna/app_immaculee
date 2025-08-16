@@ -1134,7 +1134,7 @@ def historique_paiements():
         params.append(filtre_mois)
 
     if filtre_jour:
-        requete += " AND p.date_paiement = %s"
+        requete += " AND DATE(p.date_paiement) = %s"
         params.append(filtre_jour)
 
     if filtre_caissier:
@@ -1276,7 +1276,7 @@ def telecharger_historique_paiement():
             Paragraph(p['classe'], styles["Normal"]),
             p['section'],
             p['mois'],
-            p['date_paiement'],
+            Paragraph(p['date_paiement'], styles["Normal"]),
             f"{montant_paye:,.1f} $",
             f"{montant_a_payer:,.1f} $",
             ordre,
