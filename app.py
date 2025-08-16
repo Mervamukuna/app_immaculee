@@ -1229,7 +1229,7 @@ def telecharger_historique_paiement():
         params.append(filtre_mois)
 
     if filtre_jour:
-        requete += " AND DATE(p.date_paiement) = %s"
+        query += " AND DATE(p.date_paiement) = %s"
         params.append(filtre_jour)
 
     if filtre_caissier:
