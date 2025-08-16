@@ -2742,7 +2742,7 @@ def recu_frais_etat(id):
 
         c.save()
 
-        return send_file(filepath, as_attachment=False)
+        return redirect(url_for('imprimer_recu_frais_etat', id=dernier_id))
 
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
