@@ -984,7 +984,7 @@ def recu_paiement(id):
             logo = ImageReader(os.path.join(DOSSIER_STATIC,"logo2.jpg"))
             c.saveState()
             c.setFillAlpha(0.1)
-            c.drawImage(logo, 20, 45, width=100, height=100, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo, 20, 65, width=100, height=100, preserveAspectRatio=True, mask='auto')
             c.restoreState()
         except:
             pass
