@@ -974,8 +974,8 @@ def recu_paiement(id):
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
 
                 # Logos gauche et droite
-            c.drawImage(logo_gauche, 5, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
-            c.drawImage(logo_droite, 140, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 5, 250, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_droite, 140, 250, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
         
@@ -990,11 +990,11 @@ def recu_paiement(id):
             pass
         # Texte
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(100, 320, "COMPLEXE SCOLAIRE")
-        c.drawCentredString(100, 305, "IMMACULEE CONCEPTION")
-        c.drawCentredString(100, 290, "DE LA CHARITE")
+        c.drawCentredString(100, 305, "COMPLEXE SCOLAIRE")
+        c.drawCentredString(100, 290, "IMMACULEE CONCEPTION")
+        c.drawCentredString(100, 275, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(100, 275, "REÇU DE PAIEMENT")
+        c.drawCentredString(100, 260, "REÇU DE PAIEMENT")
 
         c.setFont("Helvetica",9)
         c.drawString(10, 240, f"Date : {paiement['date_paiement']}")
