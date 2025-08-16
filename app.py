@@ -519,10 +519,10 @@ def get_frais(nom_classe, statut):
 
 @app.route('/liste', methods=['GET', 'POST'])
 @login_required
-PER_PAGE = 20  # Nombre d'élèves par page
-page = request.args.get('page', 1, type=int)  # Page actuelle
 def liste_eleves():
-   
+    per_page = 20  # Nombre d'élèves par page
+    page = request.args.get('page', 1, type=int)  # Page actuelle
+    
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -549,26 +549,26 @@ def liste_eleves():
 
     cursor.execute(count_query, count_params)
     total_results = cursor.fetchone()[0]
-    total_pages = (total_results + PER_PAGE - 1) // PER_PAGE
+    total_pages = (total_results + per_page - 1) // per_page
 
-    offset = (page - 1) * PER_PAGE
+    offset = (page - 1) * per_page
 
     if classe and recherche:
         cursor.execute("""
             SELECT * FROM eleves 
             WHERE classe = %s AND (nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s)
             LIMIT %s OFFSET %s
-        """, (classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', PER_PAGE, offset))
+        """, (classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', per_page, offset))
     elif classe:
-        cursor.execute("SELECT * FROM eleves WHERE classe = %s LIMIT %s OFFSET %s", (classe, PER_PAGE, offset))
+        cursor.execute("SELECT * FROM eleves WHERE classe = %s LIMIT %s OFFSET %s", (classe, per_page, offset))
     elif recherche:
         cursor.execute("""
             SELECT * FROM eleves 
             WHERE nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s
             LIMIT %s OFFSET %s
-        """, (f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', PER_PAGE, offset))
+        """, (f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', per_page, offset))
     else:
-        cursor.execute("SELECT * FROM eleves LIMIT %s OFFSET %s", (PER_PAGE, offset))
+        cursor.execute("SELECT * FROM eleves LIMIT %s OFFSET %s", (per_page, offset))
     eleves = cursor.fetchall()
     conn.close()
 
