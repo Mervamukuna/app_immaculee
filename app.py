@@ -2741,7 +2741,6 @@ def recu_frais_etat(id):
         })
 
         c.save()
-        return redirect(url_for('imprimer_recu_frais_etat', id=dernier_id))
 
         return send_file(filepath, as_attachment=False)
 
