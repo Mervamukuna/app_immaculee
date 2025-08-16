@@ -974,7 +974,7 @@ def recu_paiement(id):
             logo_droite = ImageReader(os.path.join(DOSSIER_STATIC,"logo.jpg")) # ton logo à gauche
 
                 # Logos gauche et droite
-            c.drawImage(logo_gauche, 15, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
+            c.drawImage(logo_gauche, 10, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
             c.drawImage(logo_droite, 245, 290, width=40, height=40, preserveAspectRatio=True, mask='auto')
         except:
             pass
@@ -989,27 +989,27 @@ def recu_paiement(id):
         except:
             pass
         # Texte
-        c.setFont("Helvetica-Bold", 13)
+        c.setFont("Helvetica-Bold", 12)
         c.drawCentredString(149, 320, "COMPLEXE SCOLAIRE")
         c.drawCentredString(149, 305, "IMMACULEE CONCEPTION")
         c.drawCentredString(149, 290, "DE LA CHARITE")
-        c.setFont("Helvetica-Bold", 12)
+        c.setFont("Helvetica-Bold", 11)
         c.drawCentredString(149, 275, "REÇU DE PAIEMENT")
 
-        c.setFont("Helvetica", 12)
-        c.drawString(25, 240, f"Date : {paiement['date_paiement']}")
-        c.drawString(25, 220, f"Matricule : {paiement['matricule']}")
-        c.drawString(25, 200, f"Nom complet : {nom_complet}")
-        c.drawString(25, 180, f"Genre : {paiement['genre']}")
-        c.drawString(25, 160, f"Classe : {paiement['classe']}")
-        c.drawString(25, 140, f"Mois payé : {paiement['mois']}")
-        c.drawString(25, 120, f"Montant payé : {float(paiement['montant_paye']):,.1f} $")
-        c.drawString(25, 100, f"Montant restant : {montant_restant:,.1f} $")
-        c.drawString(25, 80, f"Caissier(ère) : {paiement['observation']}")
+        c.setFont("Helvetica", 11)
+        c.drawString(15, 240, f"Date : {paiement['date_paiement']}")
+        c.drawString(15, 220, f"Matricule : {paiement['matricule']}")
+        c.drawString(15, 200, f"Nom complet : {nom_complet}")
+        c.drawString(15, 180, f"Genre : {paiement['genre']}")
+        c.drawString(15, 160, f"Classe : {paiement['classe']}")
+        c.drawString(15, 140, f"Mois payé : {paiement['mois']}")
+        c.drawString(15, 120, f"Montant payé : {float(paiement['montant_paye']):,.1f} $")
+        c.drawString(15, 100, f"Montant restant : {montant_restant:,.1f} $")
+        c.drawString(15, 80, f"Caissier(ère) : {paiement['observation']}")
 
         c.setFont("Helvetica-Oblique", 10)
-        c.drawString(25, 60, "Merci pour votre confiance!")
-        c.drawString(25, 45, "Veillez bien garder votre recu!")
+        c.drawString(15, 60, "Merci pour votre confiance!")
+        c.drawString(15, 45, "Veillez bien garder votre recu!")
         c.save()
 
         # ← Ici, ajoute la vérification
