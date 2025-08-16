@@ -2712,7 +2712,7 @@ def recu_frais_etat(id):
 
         # Texte
         c.setFont("Helvetica-Bold", 9)
-        c.drawCentredString(10, 295, "COMPLEXE SCOLAIRE")
+        c.drawCentredString(100, 295, "COMPLEXE SCOLAIRE")
         c.drawCentredString(100, 285, "IMMACULEE CONCEPTION")
         c.drawCentredString(100, 275, "DE LA CHARITE")
         c.setFont("Helvetica-Bold", 9)
@@ -2735,24 +2735,19 @@ def recu_frais_etat(id):
         c.drawString(10, 110, "Gardez bien votre reçu!")
 
         from reportlab.pdfbase import pdfdoc
-        c._doc.Catalog.OpenAction = pdfdoc.PDFDictionary({
-            "S": "/Named",
-            "N": "/Print"
-        })
-
         c.save()
-
+        return redirect(url_for('imprimer_pdf') + '?url=' + url_for('recu_frais_etat', matricule=matricule))
         return send_file(filepath, as_attachment=False)
 
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
         return "Une erreur s’est produite lors de la génération du reçu.", 500
 
-@app.route('/afficher_recu_frais_etat/<int:id>')
-@login_required
-def afficher_recu_frais_etat(id):
-    url_pdf = url_for('recu_frais_etat', id=id)
-    return render_template('imprimer_pdf.html', url_pdf=url_pdf)
+#@app.route('/afficher_recu_frais_etat/<int:id>')
+#@login_required
+#def afficher_recu_frais_etat(id):
+    #url_pdf = url_for('recu_frais_etat', id=id)
+    #return render_template('imprimer_pdf.html', url_pdf=url_pdf)
 
 @app.route('/liste_frais_etat')
 @login_required
