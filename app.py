@@ -2734,9 +2734,16 @@ def recu_frais_etat(id):
         c.drawString(10, 120, "Merci pour votre confiance!")
         c.drawString(10, 110, "Gardez bien votre reçu!")
 
-        c.save()
+        from reportlab.pdfbase import pdfdoc
+        c._doc.Catalog.OpenAction = pdfdoc.PDFDictionary({
+            "S": "/Named",
+            "N": "/Print"
+        })
 
+        c.save()
         return redirect(url_for('imprimer_recu_frais_etat', id=dernier_id))
+
+        return send_file(filepath, as_attachment=False)
 
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
