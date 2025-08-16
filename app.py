@@ -2232,8 +2232,6 @@ def telecharger_statistiques_paiements():
         mois,
         mois, mois,
         annee_scolaire, annee_scolaire,
-        mois, mois,
-        annee_scolaire, annee_scolaire,
         classe, classe,
         section, section
     ]
