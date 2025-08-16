@@ -2742,17 +2742,17 @@ def recu_frais_etat(id):
 
         c.save()
 
-        return send_file(filepath, as_attachment=False)
+        return redirect(url_for('imprimer_pdf') + '?url=' + url_for('recu_frais_etat', id=id))
 
     except Exception as e:
         print("Erreur lors de la génération du reçu :", e)
         return "Une erreur s’est produite lors de la génération du reçu.", 500
 
-@app.route('/afficher_recu_frais_etat/<int:id>')
-@login_required
-def afficher_recu_frais_etat(id):
-    url_pdf = url_for('recu_frais_etat', id=id)
-    return render_template('imprimer_pdf.html', url_pdf=url_pdf)
+#@app.route('/afficher_recu_frais_etat/<int:id>')
+#@login_required
+#def afficher_recu_frais_etat(id):
+    #url_pdf = url_for('recu_frais_etat', id=id)
+    #return render_template('imprimer_pdf.html', url_pdf=url_pdf)
 
 @app.route('/liste_frais_etat')
 @login_required
