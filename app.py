@@ -2651,7 +2651,7 @@ def enregistrer_frais_etat():
             dernier_id = cursor.lastrowid  # ✅ Récupère l’ID de l’enregistrement
 
             conn.close()
-            return redirect(url_for('imprimer_recu_frais_etat', id=id))  # ✅ Redirige vers le reçu PDF
+            return redirect(url_for('imprimer_recu_frais_etat', id=dernier_id))  # ✅ Redirige vers le reçu PDF
 
         else:
             conn.close()
