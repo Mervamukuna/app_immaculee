@@ -193,7 +193,25 @@
           </tbody>
         </table>
       </div>
-
+      <nav aria-label="Pagination">
+        <ul class="pagination justify-content-center mt-4">
+          {% if page > 1 %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('liste_eleves', page=page-1, classe=classe, recherche=recherche) }}">Précédent</a>
+            </li>
+          {% endif %}
+          {% for p in range(1, total_pages+1) %}
+            <li class="page-item {% if p == page %}active{% endif %}">
+              <a class="page-link" href="{{ url_for('liste_eleves', page=p, classe=classe, recherche=recherche) }}">{{ p }}</a>
+            </li>
+          {% endfor %}
+          {% if page < total_pages %}
+            <li class="page-item">
+              <a class="page-link" href="{{ url_for('liste_eleves', page=page+1, classe=classe, recherche=recherche) }}">Suivant</a>
+            </li>
+          {% endif %}
+        </ul>
+      </nav>
     </div>
   </div>
 </body>

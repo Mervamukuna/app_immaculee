@@ -510,16 +510,17 @@ def get_frais(nom_classe, statut):
 
         montant = cursor.fetchone()
         return jsonify({'frais': montant[0] if montant else 0})
-    except mariadb.Error as e:
-        print(f"Erreur MariaDB: {e}")
+    except pymysql.Error as e:
+        print(f"Erreur pymysql: {e}")
         return jsonify({'frais': 0})
     finally:
         if 'conn' in locals():
             conn.close()
 
-
 @app.route('/liste', methods=['GET', 'POST'])
 @login_required
+PER_PAGE = 20  # Nombre d'élèves par page
+page = request.args.get('page', 1, type=int)  # Page actuelle
 def liste_eleves():
    
     conn = get_db_connection()
@@ -532,26 +533,54 @@ def liste_eleves():
     # 🔹 Gérer les filtres
     classe = request.form.get('classe') if request.method == 'POST' else None
     recherche = request.form.get('recherche') if request.method == 'POST' else None
+    # Construire la requête COUNT pour le total
+    count_query = "SELECT COUNT(*) AS total FROM eleves WHERE 1=1"
+    count_params = []
+
+    if classe and recherche:
+        count_query += " AND classe = %s AND (nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s)"
+        count_params.extend([classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'])
+    elif classe:
+        count_query += " AND classe = %s"
+        count_params.append(classe)
+    elif recherche:
+        count_query += " AND (nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s)"
+        count_params.extend([f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'])
+
+    cursor.execute(count_query, count_params)
+    total_results = cursor.fetchone()[0]
+    total_pages = (total_results + PER_PAGE - 1) // PER_PAGE
+
+    offset = (page - 1) * PER_PAGE
 
     if classe and recherche:
         cursor.execute("""
             SELECT * FROM eleves 
             WHERE classe = %s AND (nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s)
-        """, (classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'))
+            LIMIT %s OFFSET %s
+        """, (classe, f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', PER_PAGE, offset))
     elif classe:
-        cursor.execute("SELECT * FROM eleves WHERE classe = %s", (classe,))
+        cursor.execute("SELECT * FROM eleves WHERE classe = %s LIMIT %s OFFSET %s", (classe, PER_PAGE, offset))
     elif recherche:
         cursor.execute("""
             SELECT * FROM eleves 
             WHERE nom LIKE %s OR postnom LIKE %s OR prenom LIKE %s
-        """, (f'%{recherche}%', f'%{recherche}%', f'%{recherche}%'))
+            LIMIT %s OFFSET %s
+        """, (f'%{recherche}%', f'%{recherche}%', f'%{recherche}%', PER_PAGE, offset))
     else:
-        cursor.execute("SELECT * FROM eleves")
-
+        cursor.execute("SELECT * FROM eleves LIMIT %s OFFSET %s", (PER_PAGE, offset))
     eleves = cursor.fetchall()
     conn.close()
 
-    return render_template('liste.html', eleves=eleves, classe=classe or "", recherche=recherche or "", classes=classes)
+    return render_template(
+        'liste.html',
+        eleves=eleves,
+        classe=classe or "",
+        recherche=recherche or "",
+        classes=classes,
+        page=page,
+        total_pages=total_pages
+    )
 
 @app.route('/telecharger_pdf/<classe>')
 @login_required
