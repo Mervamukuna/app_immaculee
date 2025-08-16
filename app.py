@@ -2205,6 +2205,7 @@ def telecharger_statistiques_paiements():
             %s AS mois,
             COUNT(DISTINCT e.matricule) AS nb_eleves,
             COUNT(DISTINCT p.matricule) AS nb_payeurs,
+            SUM(
             CASE 
                 WHEN e.prise_en_charge IN ('BONUS','E/E','PRO_DEO') THEN 0
                 ELSE COALESCE((
@@ -2214,7 +2215,8 @@ def telecharger_statistiques_paiements():
                     AND (%s = '' OR p2.mois = %s)
                     AND (%s = '' OR p2.annee_scolaire = %s)
                 ), 0)
-            END AS total_paye
+            END
+        ) AS total_paye
             COALESCE(SUM(CASE WHEN e.prise_en_charge NOT IN ('BONUS','E/E','PRO_DEO') THEN t.montant ELSE 0 END), 0) AS total_attendu
         FROM eleves e
         JOIN classes c ON e.classe = c.nom
