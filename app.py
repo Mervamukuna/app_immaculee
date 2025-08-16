@@ -2140,12 +2140,16 @@ def statistiques_paiements():
 
     for stat in statistiques:
         montant_attendu = float(stat["total_attendu"]) or 0
+        total_paye = float(stat["total_paye"]) or 0
         # Ajustement pour la colonne "total attendu"
         if mois == '' and annee_scolaire != '':
             # Si on ne filtre pas le mois mais que l'année est précisée
             stat["total_attendu"] = montant_attendu * nb_mois_par_annee
         else:
             stat["total_attendu"] = montant_attendu
+
+        stat["total_paye"] = total_paye
+        
         if mois == '' and annee_scolaire != '':
             # Si on filtre par année scolaire (sans mois), multiplier par le nombre de mois
             total_attendu_global += montant_attendu * nb_mois_par_annee
