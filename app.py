@@ -1378,6 +1378,8 @@ def telecharger_historique_paiement():
 @app.route('/eleves_non_en_ordre', methods=['GET', 'POST'])
 @login_required
 def eleves_non_en_ordre():
+    per_page = 20 #nombre de resultats par pages
+    page = request.args.get('page',1,type=int)
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
@@ -1407,22 +1409,34 @@ def eleves_non_en_ordre():
     """
     params = []
 
-    # Filtres
+    count_query = """
+    SELECT COUNT(DISTINCT p.matricule, p.mois) AS total
+        FROM paiements p
+        JOIN eleves e ON e.matricule = p.matricule
+        WHERE 1=1
+        AND e.prise_en_charge NOT IN ('BONUS','E/E', 'PRO_DEO')
+    """
+    count_params = params.copy()
+
     if filtre_matricule:
-        query += " AND p.matricule LIKE %s"
-        params.append(f"%{filtre_matricule}%")
+        count_query += " AND p.matricule LIKE %s"
     if filtre_classe:
-        query += " AND e.classe = %s"
-        params.append(filtre_classe)
+        count_query += " AND e.classe = %s"
     if filtre_mois:
-        query += " AND p.mois = %s"
-        params.append(filtre_mois)
+        count_query += " AND p.mois = %s"
+
+    cursor.execute(count_query, count_params)
+    total_results = cursor.fetchone()['total']
+    total_pages = (total_results + per_page - 1) // per_page
 
     query += """
         GROUP BY p.matricule, p.mois
         HAVING total_montant_paye < montant_a_payer
         ORDER BY date_paiement DESC
     """
+    offset = (page - 1) * per_page
+    query += " LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
     cursor.execute(query, params)
     resultats = cursor.fetchall()
     conn.close()
@@ -1450,7 +1464,9 @@ def eleves_non_en_ordre():
         mois_disponibles=mois_disponibles,
         filtre_matricule=filtre_matricule,
         filtre_classe=filtre_classe,
-        filtre_mois=filtre_mois
+        filtre_mois=filtre_mois,
+        page=page,
+        total_pages=total_pages
     )
 
 
