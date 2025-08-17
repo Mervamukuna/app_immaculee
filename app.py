@@ -1171,9 +1171,9 @@ def historique_paiements():
 
     requete += " ORDER BY p.date_paiement DESC"
 
-    offset = (page - 1) * PER_PAGE
+    offset = (page - 1) * per_page
     requete += " LIMIT %s OFFSET %s"
-    params.extend([PER_PAGE, offset])
+    params.extend([per_page, offset])
 
     cursor.execute(requete, params)
     paiements = cursor.fetchall()
