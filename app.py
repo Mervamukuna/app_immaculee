@@ -522,7 +522,7 @@ def get_frais(nom_classe, statut):
 def liste_eleves():
     per_page = 20  # Nombre d'élèves par page
     page = request.args.get('page', 1, type=int)  # Page actuelle
-    
+
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -1107,6 +1107,8 @@ def infos_eleve(matricule):
 @app.route('/historique_paiements', methods=['GET', 'POST'])
 @login_required
 def historique_paiements():
+    page = int(request.args.get('page', 1))  # page actuelle, défaut = 1
+    per_page = 20  # nombre de lignes par page
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
     
@@ -1144,32 +1146,34 @@ def historique_paiements():
     """
     params = []
 
+    # Requête pour compter le total des paiements avec les mêmes filtres
+    count_query = "SELECT COUNT(*) AS total FROM paiements p JOIN eleves e ON p.matricule = e.matricule WHERE 1=1"
+    count_params = params.copy()
+
     if filtre_matricule:
-        requete += " AND p.matricule LIKE %s"
-        params.append(f"%{filtre_matricule}%")
-
+        count_query += " AND p.matricule LIKE %s"
     if filtre_classe:
-        requete += " AND e.classe = %s"
-        params.append(filtre_classe)
-
+        count_query += " AND e.classe = %s"
     if filtre_ordre == "Oui":
-        requete += " AND CAST(p.montant_paye AS FLOAT) >= CAST(p.montant_a_payer AS FLOAT)"
+        count_query += " AND CAST(p.montant_paye AS FLOAT) >= CAST(p.montant_a_payer AS FLOAT)"
     elif filtre_ordre == "Non":
-        requete += " AND CAST(p.montant_paye AS FLOAT) < CAST(p.montant_a_payer AS FLOAT)"
-
+        count_query += " AND CAST(p.montant_paye AS FLOAT) < CAST(p.montant_a_payer AS FLOAT)"
     if filtre_mois:
-        requete += " AND p.mois = %s"
-        params.append(filtre_mois)
-
+        count_query += " AND p.mois = %s"
     if filtre_jour:
-        requete += " AND DATE(p.date_paiement) = %s"
-        params.append(filtre_jour)
-
+        count_query += " AND DATE(p.date_paiement) = %s"
     if filtre_caissier:
-        requete += " AND p.observation = %s"
-        params.append(filtre_caissier)
+        count_query += " AND p.observation = %s"
+
+    cursor.execute(count_query, count_params)
+    total_results = cursor.fetchone()['total']
+    total_pages = (total_results + per_page - 1) // per_page
 
     requete += " ORDER BY p.date_paiement DESC"
+
+    offset = (page - 1) * PER_PAGE
+    requete += " LIMIT %s OFFSET %s"
+    params.extend([PER_PAGE, offset])
 
     cursor.execute(requete, params)
     paiements = cursor.fetchall()
@@ -1218,7 +1222,9 @@ def historique_paiements():
         filtre_mois=filtre_mois,
         filtre_jour=filtre_jour,
         filtre_caissier=filtre_caissier,
-        caissiers=caissiers
+        caissiers=caissiers,
+        page=page,
+        total_pages=total_pages
     )
 
 
