@@ -1984,6 +1984,8 @@ def telecharger_eleves_en_ordre():
 @app.route('/eleves_sans_paiement', methods=['GET', 'POST'])
 @login_required
 def eleves_sans_paiement():
+    per_page = 200
+    page = request.args.get('page',1,type=int)
     filtre_matricule = ''
     filtre_classe = ''
     filtre_mois = ''
@@ -2021,6 +2023,16 @@ def eleves_sans_paiement():
         query += " AND e.classe = %s"
         params.append(filtre_classe)
 
+    # 🔢 Requête pour compter le nombre total d'élèves sans paiement
+    count_query = f"SELECT COUNT(*) as total FROM ({query}) as sous_requete"
+    cursor.execute(count_query, params)
+    total_results = cursor.fetchone()['total']
+    total_pages = (total_results + per_page - 1) // per_page
+
+    offset = (page - 1) * per_page
+    query += " LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
+
     cursor.execute(query, params)
     resultats = cursor.fetchall()
     conn.close()
@@ -2031,7 +2043,9 @@ def eleves_sans_paiement():
                            filtre_classe=filtre_classe,
                            filtre_mois=filtre_mois,
                            classes=classes,
-                           mois_disponibles=mois_disponibles)
+                           mois_disponibles=mois_disponibles,
+                           page=page,
+                           total_pages=total_pages)
 
 @app.route('/telecharger_sans_paiement')
 @login_required
