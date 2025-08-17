@@ -1756,6 +1756,8 @@ def finaliser_paiement(matricule, mois):
 @app.route('/eleves_en_ordre', methods=['GET', 'POST'])
 @login_required
 def eleves_en_ordre():
+    per_page = 20
+    page = request.args.get('page',1,type=int)
     conn = get_db_connection()
     cursor = conn.cursor(pymysql.cursors.DictCursor)
 
@@ -1808,13 +1810,20 @@ def eleves_en_ordre():
     query += " GROUP BY e.matricule"
 
     # ✅ Ne garder que ceux qui ont payé ou sont en prise en charge
-    query = f"""
-        SELECT * FROM (
+    # Requête de comptage pour pagination
+    count_query = f"""
+        SELECT COUNT(*) AS total FROM (
             {query}
         ) AS sous_requete
         WHERE montant_paye >= montant_a_payer 
         OR prise_en_charge IN ('BONUS', 'E/E', 'PRO_DEO')
     """
+    cursor.execute(count_query, params)
+    total_results = cursor.fetchone()['total']
+    total_pages = (total_results + per_page - 1) // per_page
+    offset = (page - 1) * per_page
+    query += " LIMIT %s OFFSET %s"
+    params.extend([per_page, offset])
 
     cursor.execute(query, params)
     resultats = cursor.fetchall()
@@ -1826,7 +1835,9 @@ def eleves_en_ordre():
                            filtre_classe=filtre_classe,
                            filtre_mois=filtre_mois,
                            classes=classes,
-                           mois_disponibles=mois)
+                           mois_disponibles=mois,
+                           page=page,
+                           total_pages=total_pages)
 
 @app.route('/telecharger_eleves_en_ordre')
 @login_required
